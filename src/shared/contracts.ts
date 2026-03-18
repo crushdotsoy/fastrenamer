@@ -154,6 +154,10 @@ export const historyEntrySchema = z.object({
   undoReason: z.string().optional(),
 }) satisfies z.ZodType<HistoryEntry>;
 
+export interface WindowState {
+  isMaximized: boolean;
+}
+
 export interface AdvancedRenamerApi {
   getDroppedPaths(files: File[]): string[];
   pickSources(request: PickSourcesRequest): Promise<SourceSelection[]>;
@@ -166,6 +170,11 @@ export interface AdvancedRenamerApi {
   savePreset(input: { id?: number; name: string; rules: RenameRule[] }): Promise<Preset>;
   deletePreset(id: number): Promise<void>;
   listHistory(): Promise<HistoryEntry[]>;
+  minimizeWindow(): Promise<void>;
+  toggleMaximizeWindow(): Promise<WindowState>;
+  closeWindow(): Promise<void>;
+  getWindowState(): Promise<WindowState>;
+  onWindowStateChanged(listener: (state: WindowState) => void): () => void;
 }
 
 export type {

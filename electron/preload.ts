@@ -16,6 +16,19 @@ const api: AdvancedRenamerApi = {
   savePreset: (input) => ipcRenderer.invoke('savePreset', input),
   deletePreset: (id) => ipcRenderer.invoke('deletePreset', id),
   listHistory: () => ipcRenderer.invoke('listHistory'),
+  minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
+  toggleMaximizeWindow: () => ipcRenderer.invoke('window:toggleMaximize'),
+  closeWindow: () => ipcRenderer.invoke('window:close'),
+  getWindowState: () => ipcRenderer.invoke('window:getState'),
+  onWindowStateChanged: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, state: Parameters<typeof listener>[0]) => {
+      listener(state);
+    };
+    ipcRenderer.on('window:stateChanged', handler);
+    return () => {
+      ipcRenderer.off('window:stateChanged', handler);
+    };
+  },
 };
 
 contextBridge.exposeInMainWorld('advancedRenamer', api);
