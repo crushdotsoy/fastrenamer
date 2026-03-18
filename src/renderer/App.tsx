@@ -623,6 +623,7 @@ export function App() {
         {/* Top bar */}
         <div className="shrink-0 pb-2">
           <TopBar
+            platform={platform}
             theme={theme}
             windowState={windowState}
             sourceCount={sources.length}
@@ -996,6 +997,7 @@ export function App() {
 // ─── TopBar ───────────────────────────────────────────────────────────────────
 
 function TopBar({
+  platform,
   theme,
   windowState,
   sourceCount,
@@ -1017,6 +1019,7 @@ function TopBar({
   onToggleMaximizeWindow,
   onCloseWindow,
 }: {
+  platform: PlatformTarget;
   theme: 'dark' | 'light';
   windowState: WindowState;
   sourceCount: number;
@@ -1038,10 +1041,41 @@ function TopBar({
   onToggleMaximizeWindow: () => void;
   onCloseWindow: () => void;
 }) {
+  const isMac = platform === 'darwin';
+
   return (
-    <Panel className="app-drag overflow-visible">
+    <Panel className="overflow-visible">
       {/* Main row */}
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap sm:px-5">
+      <div className="app-drag flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap sm:px-5">
+        {isMac && (
+          <div className="app-no-drag flex items-center gap-2">
+            <Tooltip content="Close">
+              <button
+                type="button"
+                className="h-3 w-3 rounded-full bg-[#ff5f57] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
+                onClick={onCloseWindow}
+                aria-label="Close window"
+              />
+            </Tooltip>
+            <Tooltip content="Minimize">
+              <button
+                type="button"
+                className="h-3 w-3 rounded-full bg-[#febc2e] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
+                onClick={onMinimizeWindow}
+                aria-label="Minimize window"
+              />
+            </Tooltip>
+            <Tooltip content={windowState.isMaximized ? 'Restore down' : 'Maximize'}>
+              <button
+                type="button"
+                className="h-3 w-3 rounded-full bg-[#28c840] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
+                onClick={onToggleMaximizeWindow}
+                aria-label={windowState.isMaximized ? 'Restore window' : 'Maximize window'}
+              />
+            </Tooltip>
+          </div>
+        )}
+
         {/* Brand */}
         <div className="flex items-center gap-2.5 mr-1">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent">
@@ -1135,46 +1169,50 @@ function TopBar({
             </IconButton>
           </Tooltip>
 
-          <div className="h-6 w-px bg-border mx-0.5" />
+          {!isMac && (
+            <>
+              <div className="h-6 w-px bg-border mx-0.5" />
 
-          <div className="flex items-center gap-1">
-            <Tooltip content="Minimize">
-              <IconButton
-                className="h-8 w-8 rounded-lg hover:bg-surface-elevated"
-                onClick={onMinimizeWindow}
-                aria-label="Minimize window"
-              >
-                <Minus className="h-4 w-4" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip content={windowState.isMaximized ? 'Restore down' : 'Maximize'}>
-              <IconButton
-                className="h-8 w-8 rounded-lg hover:bg-surface-elevated"
-                onClick={onToggleMaximizeWindow}
-                aria-label={windowState.isMaximized ? 'Restore window' : 'Maximize window'}
-              >
-                {windowState.isMaximized ? (
-                  <Copy className="h-3.5 w-3.5" />
-                ) : (
-                  <Square className="h-3.5 w-3.5" />
-                )}
-              </IconButton>
-            </Tooltip>
-            <Tooltip content="Close">
-              <IconButton
-                className="h-8 w-8 rounded-lg hover:bg-destructive/90 hover:text-white dark:hover:text-[#080c14]"
-                onClick={onCloseWindow}
-                aria-label="Close window"
-              >
-                <X className="h-4 w-4" />
-              </IconButton>
-            </Tooltip>
-          </div>
+              <div className="flex items-center gap-1">
+                <Tooltip content="Minimize">
+                  <IconButton
+                    className="h-8 w-8 rounded-lg hover:bg-surface-elevated"
+                    onClick={onMinimizeWindow}
+                    aria-label="Minimize window"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip content={windowState.isMaximized ? 'Restore down' : 'Maximize'}>
+                  <IconButton
+                    className="h-8 w-8 rounded-lg hover:bg-surface-elevated"
+                    onClick={onToggleMaximizeWindow}
+                    aria-label={windowState.isMaximized ? 'Restore window' : 'Maximize window'}
+                  >
+                    {windowState.isMaximized ? (
+                      <Copy className="h-3.5 w-3.5" />
+                    ) : (
+                      <Square className="h-3.5 w-3.5" />
+                    )}
+                  </IconButton>
+                </Tooltip>
+                <Tooltip content="Close">
+                  <IconButton
+                    className="h-8 w-8 rounded-lg hover:bg-destructive/90 hover:text-white dark:hover:text-[#080c14]"
+                    onClick={onCloseWindow}
+                    aria-label="Close window"
+                  >
+                    <X className="h-4 w-4" />
+                  </IconButton>
+                </Tooltip>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* Status bar */}
-      <div className="flex flex-wrap items-center gap-2 border-t border-border bg-surface/40 px-4 py-2 sm:px-5">
+      <div className="app-no-drag flex flex-wrap items-center gap-2 border-t border-border bg-surface/40 px-4 py-2 sm:px-5">
         <Badge dot tone="ok">{preview.summary.ok} ok</Badge>
         <Badge dot tone="conflict">{preview.summary.conflict} conflicts</Badge>
         <Badge dot tone="invalid">{preview.summary.invalid} invalid</Badge>
