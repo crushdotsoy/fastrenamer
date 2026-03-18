@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "composite": true,
+    "noEmit": true,
+    "types": ["node", "vitest/globals"],
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["src/shared/*"],
+      "@fast-renamer/rename-engine": ["packages/rename-engine/src/index.ts"]
+    }
+  },
+  "include": ["electron", "vite.config.ts", "tailwind.config.ts", "src/shared", "packages", "src/**/*.test.ts"]
+}
