@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu } from 'electron';
 import { compareNatural } from '@fast-renamer/rename-engine';
 import type { RenameRule } from '@fast-renamer/rename-engine';
 import {
@@ -25,6 +25,15 @@ let database: AppDatabase;
 const mainDir = path.dirname(fileURLToPath(import.meta.url));
 
 const getPlatform = () => process.platform as 'darwin' | 'win32' | 'linux';
+const DEFAULT_WINDOW_STATE = { isMaximized: false };
+
+function serializeWindowState(window: BrowserWindow) {
+  return { isMaximized: window.isMaximized() };
+}
+
+function emitWindowState(window: BrowserWindow) {
+  window.webContents.send('window:stateChanged', serializeWindowState(window));
+}
 
 function resolvePreloadPath() {
   const candidates = [
@@ -46,13 +55,15 @@ function createWindow() {
   const devServerUrl = process.env.VITE_DEV_SERVER_URL;
   const preloadPath = resolvePreloadPath();
 
-  mainWindow = new BrowserWindow({
+  const window = new BrowserWindow({
     width: 1540,
     height: 980,
     minWidth: 1200,
     minHeight: 780,
+    frame: false,
     backgroundColor: '#0d1117',
     title: 'Fast Renamer',
+    autoHideMenuBar: true,
     webPreferences: {
       sandbox: true,
       contextIsolation: true,
@@ -60,11 +71,23 @@ function createWindow() {
       preload: preloadPath,
     },
   });
+  mainWindow = window;
+
+  window.on('maximize', () => emitWindowState(window));
+  window.on('unmaximize', () => emitWindowState(window));
+  window.on('enter-full-screen', () => emitWindowState(window));
+  window.on('leave-full-screen', () => emitWindowState(window));
+  window.once('ready-to-show', () => emitWindowState(window));
+  window.on('closed', () => {
+    if (mainWindow === window) {
+      mainWindow = null;
+    }
+  });
 
   if (devServerUrl) {
-    void mainWindow.loadURL(devServerUrl);
+    void window.loadURL(devServerUrl);
   } else {
-    void mainWindow.loadFile(path.join(app.getAppPath(), 'dist-renderer/index.html'));
+    void window.loadFile(path.join(app.getAppPath(), 'dist-renderer/index.html'));
   }
 }
 
@@ -131,9 +154,38 @@ function registerIpc() {
   });
 
   ipcMain.handle('listHistory', () => listHistoryWithUndoStatus(getPlatform(), database));
+
+  ipcMain.handle('window:minimize', (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.minimize();
+  });
+
+  ipcMain.handle('window:toggleMaximize', (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) {
+      return DEFAULT_WINDOW_STATE;
+    }
+
+    if (window.isMaximized()) {
+      window.unmaximize();
+    } else {
+      window.maximize();
+    }
+
+    return serializeWindowState(window);
+  });
+
+  ipcMain.handle('window:close', (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.close();
+  });
+
+  ipcMain.handle('window:getState', (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    return window ? serializeWindowState(window) : DEFAULT_WINDOW_STATE;
+  });
 }
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
   database = new AppDatabase();
   registerIpc();
   createWindow();

@@ -102,6 +102,17 @@ body {
 
 button, input, select, textarea { font: inherit; }
 
+.app-drag {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.app-no-drag,
+.app-no-drag * {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
 /* ── Custom scrollbar ───────────────────────────────────────────────────────── */
 ::-webkit-scrollbar        { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track  { background: transparent; }

@@ -6,11 +6,13 @@ import {
   ChevronDown,
   ChevronUp,
   Clock3,
+  Copy,
   Eraser,
   FileCode,
   FileInput,
   GripVertical,
   Hash,
+  Minus,
   Moon,
   Plus,
   RefreshCcw,
@@ -18,10 +20,12 @@ import {
   Save,
   Scissors,
   Settings2,
+  Square,
   Sun,
   Trash2,
   Type,
   Undo2,
+  X,
 } from 'lucide-react';
 import type { DragEvent } from 'react';
 import type {
@@ -33,6 +37,7 @@ import type {
   RenameRule,
   SourceSelection,
 } from '@fast-renamer/rename-engine';
+import type { WindowState } from '@shared/contracts';
 import {
   Badge,
   Button,
@@ -145,7 +150,13 @@ const SOURCE_LIST_COLLATOR = new Intl.Collator(undefined, {
 });
 const THEME_STORAGE_KEY = 'theme';
 const LEFT_WIDTH_STORAGE_KEY = 'left_panel_width';
-const DEFAULT_LEFT_WIDTH = 320;
+const DEFAULT_LEFT_WIDTH_RATIO = 0.28;
+const MIN_LEFT_WIDTH_RATIO = 0.18;
+const MAX_LEFT_WIDTH_RATIO = 0.45;
+
+function clampLeftWidthRatio(value: number) {
+  return Math.min(MAX_LEFT_WIDTH_RATIO, Math.max(MIN_LEFT_WIDTH_RATIO, value));
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -230,6 +241,10 @@ function useTheme() {
   return { theme, toggleTheme: () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')) };
 }
 
+const DEFAULT_WINDOW_STATE: WindowState = {
+  isMaximized: false,
+};
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export function App() {
@@ -261,18 +276,25 @@ export function App() {
   } | null>(null);
   const [pendingDroppedSources, setPendingDroppedSources] = useState<SourceSelection[] | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [windowState, setWindowState] = useState<WindowState>(DEFAULT_WINDOW_STATE);
 
-  const [leftWidth, setLeftWidth] = useState(() => {
+  const [leftWidthRatio, setLeftWidthRatio] = useState(() => {
     const stored = Number(localStorage.getItem(LEFT_WIDTH_STORAGE_KEY));
-    if (Number.isFinite(stored) && stored >= 200 && stored <= 600) {
-      return stored;
+    if (Number.isFinite(stored)) {
+      if (stored > 1) {
+        // Migrate older fixed-pixel widths to the new proportional layout.
+        return clampLeftWidthRatio(stored / Math.max(window.innerWidth - 16, 1));
+      }
+      return clampLeftWidthRatio(stored);
     }
-    return DEFAULT_LEFT_WIDTH;
+    return DEFAULT_LEFT_WIDTH_RATIO;
   });
   const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 1024);
   const isResizing = useRef(false);
+  const desktopLayoutRef = useRef<HTMLDivElement | null>(null);
   const resizeStartX = useRef(0);
-  const resizeStartWidth = useRef(0);
+  const resizeStartWidthRatio = useRef(0);
+  const resizeContainerWidth = useRef(0);
 
   const sourcePaths = useMemo(() => sources.map((s) => s.path), [sources]);
   const previewRequest = useMemo(
@@ -316,8 +338,10 @@ export function App() {
 
     function onMouseMove(e: MouseEvent) {
       if (!isResizing.current) return;
-      const delta = e.clientX - resizeStartX.current;
-      setLeftWidth(Math.max(200, Math.min(600, resizeStartWidth.current + delta)));
+      const containerWidth = resizeContainerWidth.current;
+      if (containerWidth <= 0) return;
+      const deltaRatio = (e.clientX - resizeStartX.current) / containerWidth;
+      setLeftWidthRatio(clampLeftWidthRatio(resizeStartWidthRatio.current + deltaRatio));
     }
     function onMouseUp() { isResizing.current = false; }
     window.addEventListener('mousemove', onMouseMove);
@@ -331,8 +355,27 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(LEFT_WIDTH_STORAGE_KEY, String(leftWidth));
-  }, [leftWidth]);
+    localStorage.setItem(LEFT_WIDTH_STORAGE_KEY, String(leftWidthRatio));
+  }, [leftWidthRatio]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    void window.advancedRenamer.getWindowState().then((state) => {
+      if (mounted) {
+        setWindowState(state);
+      }
+    });
+
+    const unsubscribe = window.advancedRenamer.onWindowStateChanged((state) => {
+      setWindowState(state);
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
 
   async function reloadMetadata() {
     const [presetList, historyList] = await Promise.all([
@@ -546,7 +589,10 @@ export function App() {
 
   return (
     <div
-      className="h-screen overflow-hidden p-2 text-foreground"
+      className={cn(
+        'h-screen overflow-hidden text-foreground',
+        !windowState.isMaximized && 'p-2',
+      )}
       onDragOver={(event) => {
         if (!isFileDropEvent(event)) {
           return;
@@ -567,12 +613,18 @@ export function App() {
       }}
       onDrop={(event) => void handleDrop(event)}
     >
-      <div className="mx-auto flex h-[calc(100vh-1rem)] max-w-[1800px] flex-col">
+      <div
+        className={cn(
+          'flex h-full flex-col',
+          !windowState.isMaximized && 'mx-auto max-w-[1800px]',
+        )}
+      >
 
         {/* Top bar */}
         <div className="shrink-0 pb-2">
           <TopBar
             theme={theme}
+            windowState={windowState}
             sourceCount={sources.length}
             selectedLabel={getSelectedLabel(sources)}
             preview={preview}
@@ -588,6 +640,11 @@ export function App() {
             onOpenHistory={() => setHistoryDrawerOpen(true)}
             onOpenSettings={() => setSettingsDrawerOpen(true)}
             onToggleTheme={toggleTheme}
+            onMinimizeWindow={() => void window.advancedRenamer.minimizeWindow()}
+            onToggleMaximizeWindow={() =>
+              void window.advancedRenamer.toggleMaximizeWindow().then(setWindowState)
+            }
+            onCloseWindow={() => void window.advancedRenamer.closeWindow()}
           />
         </div>
 
@@ -595,10 +652,10 @@ export function App() {
         <div className="shrink-0 border-t border-border mb-2" />
 
         {/* Main panels */}
-        <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4 lg:flex-row lg:gap-0">
+        <div ref={desktopLayoutRef} className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4 lg:flex-row lg:gap-0">
           <div
             className="h-full lg:shrink-0"
-            style={isDesktop ? { width: leftWidth, minWidth: 200, maxWidth: 600 } : undefined}
+            style={isDesktop ? { width: `${leftWidthRatio * 100}%` } : undefined}
           >
             <RulesPanel
               rules={rules}
@@ -618,9 +675,12 @@ export function App() {
             <div
               className="flex h-full w-3 shrink-0 cursor-col-resize select-none items-center justify-center group"
               onMouseDown={(e) => {
+                const containerWidth =
+                  desktopLayoutRef.current?.getBoundingClientRect().width ?? window.innerWidth;
                 isResizing.current = true;
                 resizeStartX.current = e.clientX;
-                resizeStartWidth.current = leftWidth;
+                resizeStartWidthRatio.current = leftWidthRatio;
+                resizeContainerWidth.current = containerWidth;
                 e.preventDefault();
               }}
             >
@@ -937,6 +997,7 @@ export function App() {
 
 function TopBar({
   theme,
+  windowState,
   sourceCount,
   selectedLabel,
   preview,
@@ -952,8 +1013,12 @@ function TopBar({
   onOpenHistory,
   onOpenSettings,
   onToggleTheme,
+  onMinimizeWindow,
+  onToggleMaximizeWindow,
+  onCloseWindow,
 }: {
   theme: 'dark' | 'light';
+  windowState: WindowState;
   sourceCount: number;
   selectedLabel: string;
   preview: PreviewResult;
@@ -969,9 +1034,12 @@ function TopBar({
   onOpenHistory: () => void;
   onOpenSettings: () => void;
   onToggleTheme: () => void;
+  onMinimizeWindow: () => void;
+  onToggleMaximizeWindow: () => void;
+  onCloseWindow: () => void;
 }) {
   return (
-    <Panel className="overflow-visible">
+    <Panel className="app-drag overflow-visible">
       {/* Main row */}
       <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap sm:px-5">
         {/* Brand */}
@@ -991,7 +1059,7 @@ function TopBar({
         <div className="h-6 w-px bg-border hidden sm:block" />
 
         {/* Source + nav buttons */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="app-no-drag flex flex-wrap items-center gap-2">
           <Button variant="default" size="sm" onClick={onOpenAddSources}>
             <FileInput className="h-3.5 w-3.5" />
             Add
@@ -1023,7 +1091,7 @@ function TopBar({
         <div className="flex-1" />
 
         {/* Action buttons */}
-        <div className="flex items-center gap-1.5">
+        <div className="app-no-drag flex items-center gap-1.5">
           <Tooltip content="Refresh preview">
             <IconButton
               disabled={busy !== 'idle' || sourceCount === 0}
@@ -1066,6 +1134,42 @@ function TopBar({
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </IconButton>
           </Tooltip>
+
+          <div className="h-6 w-px bg-border mx-0.5" />
+
+          <div className="flex items-center gap-1">
+            <Tooltip content="Minimize">
+              <IconButton
+                className="h-8 w-8 rounded-lg hover:bg-surface-elevated"
+                onClick={onMinimizeWindow}
+                aria-label="Minimize window"
+              >
+                <Minus className="h-4 w-4" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip content={windowState.isMaximized ? 'Restore down' : 'Maximize'}>
+              <IconButton
+                className="h-8 w-8 rounded-lg hover:bg-surface-elevated"
+                onClick={onToggleMaximizeWindow}
+                aria-label={windowState.isMaximized ? 'Restore window' : 'Maximize window'}
+              >
+                {windowState.isMaximized ? (
+                  <Copy className="h-3.5 w-3.5" />
+                ) : (
+                  <Square className="h-3.5 w-3.5" />
+                )}
+              </IconButton>
+            </Tooltip>
+            <Tooltip content="Close">
+              <IconButton
+                className="h-8 w-8 rounded-lg hover:bg-destructive/90 hover:text-white dark:hover:text-[#080c14]"
+                onClick={onCloseWindow}
+                aria-label="Close window"
+              >
+                <X className="h-4 w-4" />
+              </IconButton>
+            </Tooltip>
+          </div>
         </div>
       </div>
 
