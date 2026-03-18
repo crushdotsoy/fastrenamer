@@ -1047,43 +1047,8 @@ function TopBar({
     <Panel className="overflow-visible">
       {/* Main row */}
       <div className="app-drag flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap sm:px-5">
-        {isMac && (
-          <div className="app-no-drag flex items-center gap-2">
-            <Tooltip content="Close">
-              <button
-                type="button"
-                className="group relative h-3 w-3 rounded-full bg-[#ff5f57] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
-                onClick={onCloseWindow}
-                aria-label="Close window"
-              >
-                <X className="pointer-events-none absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 text-black/65 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
-              </button>
-            </Tooltip>
-            <Tooltip content="Minimize">
-              <button
-                type="button"
-                className="group relative h-3 w-3 rounded-full bg-[#febc2e] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
-                onClick={onMinimizeWindow}
-                aria-label="Minimize window"
-              >
-                <Minus className="pointer-events-none absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 text-black/65 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
-              </button>
-            </Tooltip>
-            <Tooltip content={windowState.isMaximized ? 'Restore down' : 'Maximize'}>
-              <button
-                type="button"
-                className="group relative h-3 w-3 rounded-full bg-[#28c840] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
-                onClick={onToggleMaximizeWindow}
-                aria-label={windowState.isMaximized ? 'Restore window' : 'Maximize window'}
-              >
-                <Plus className="pointer-events-none absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 text-black/65 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
-              </button>
-            </Tooltip>
-          </div>
-        )}
-
         {/* Brand */}
-        <div className="flex items-center gap-2.5 mr-1">
+        <div className={cn('mr-1 flex items-center gap-2.5', isMac && 'pl-16 sm:pl-18')}>
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent">
             <FileCode className="h-4 w-4" />
           </div>

@@ -54,13 +54,22 @@ function resolvePreloadPath() {
 function createWindow() {
   const devServerUrl = process.env.VITE_DEV_SERVER_URL;
   const preloadPath = resolvePreloadPath();
+  const isMac = process.platform === 'darwin';
 
   const window = new BrowserWindow({
     width: 1540,
     height: 980,
     minWidth: 1200,
     minHeight: 780,
-    frame: false,
+    roundedCorners: true,
+    ...(isMac
+      ? {
+          titleBarStyle: 'hidden',
+          trafficLightPosition: { x: 16, y: 18 },
+        }
+      : {
+          frame: false,
+        }),
     backgroundColor: '#0d1117',
     title: 'Fast Renamer',
     autoHideMenuBar: true,
