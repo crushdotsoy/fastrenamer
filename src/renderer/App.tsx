@@ -1052,26 +1052,32 @@ function TopBar({
             <Tooltip content="Close">
               <button
                 type="button"
-                className="h-3 w-3 rounded-full bg-[#ff5f57] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
+                className="group relative h-3 w-3 rounded-full bg-[#ff5f57] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
                 onClick={onCloseWindow}
                 aria-label="Close window"
-              />
+              >
+                <X className="pointer-events-none absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 text-black/65 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
+              </button>
             </Tooltip>
             <Tooltip content="Minimize">
               <button
                 type="button"
-                className="h-3 w-3 rounded-full bg-[#febc2e] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
+                className="group relative h-3 w-3 rounded-full bg-[#febc2e] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
                 onClick={onMinimizeWindow}
                 aria-label="Minimize window"
-              />
+              >
+                <Minus className="pointer-events-none absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 text-black/65 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
+              </button>
             </Tooltip>
             <Tooltip content={windowState.isMaximized ? 'Restore down' : 'Maximize'}>
               <button
                 type="button"
-                className="h-3 w-3 rounded-full bg-[#28c840] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
+                className="group relative h-3 w-3 rounded-full bg-[#28c840] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
                 onClick={onToggleMaximizeWindow}
                 aria-label={windowState.isMaximized ? 'Restore window' : 'Maximize window'}
-              />
+              >
+                <Plus className="pointer-events-none absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 text-black/65 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
+              </button>
             </Tooltip>
           </div>
         )}
