@@ -48,17 +48,18 @@
         "dmg",
         "zip"
       ],
-      "artifactName": "${productName}-${version}-${arch}.${ext}"
+      "artifactName": "Fast-Renamer-${version}-${arch}.${ext}"
     },
     "win": {
       "target": [
         "nsis"
       ],
-      "artifactName": "${productName}-${version}-${arch}.${ext}"
+      "artifactName": "Fast-Renamer-${version}-${arch}.${ext}"
     },
     "linux": {
       "icon": "build/icon.png",
-      "category": "Utility"
+      "category": "Utility",
+      "artifactName": "Fast-Renamer-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
