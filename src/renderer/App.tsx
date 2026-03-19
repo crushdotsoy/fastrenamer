@@ -31,7 +31,7 @@ import {
   AlertTriangle,
   X,
 } from 'lucide-react';
-import type { DragEvent } from 'react';
+import type { DragEvent, ReactNode } from 'react';
 import type {
   HistoryEntry,
   PlatformTarget,
@@ -349,6 +349,67 @@ function getUpdateSummary(state: UpdateState) {
   }
 }
 
+type SettingsSectionId = 'updates' | 'executionProfile' | 'platformRules' | 'appearance';
+
+function SettingsSection({
+  title,
+  badge,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  badge?: ReactNode;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-border bg-surface p-4">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-start justify-between gap-3 text-left"
+      >
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2 pl-2">
+          {badge}
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:text-foreground">
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 transition-transform duration-200 ease-out',
+                open && 'rotate-180',
+              )}
+            />
+          </span>
+        </div>
+      </button>
+
+      <div
+        aria-hidden={!open}
+        className={cn(
+          'grid transition-[grid-template-rows,opacity] duration-200 ease-out',
+          open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div
+            className={cn(
+              'pt-4 transition-transform duration-200 ease-out',
+              open ? 'translate-y-0' : '-translate-y-1',
+            )}
+          >
+            {children}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export function App() {
@@ -369,6 +430,7 @@ export function App() {
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
   const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
   const [addSourcesOpen, setAddSourcesOpen] = useState(false);
+  const [openSettingsSection, setOpenSettingsSection] = useState<SettingsSectionId | null>(null);
   const [presetName, setPresetName] = useState('');
   const [presetSearch, setPresetSearch] = useState('');
   const [selectedPresetId, setSelectedPresetId] = useState<number | null>(null);
@@ -618,6 +680,10 @@ export function App() {
     }
 
     void installUpdate();
+  }
+
+  function toggleSettingsSection(section: SettingsSectionId) {
+    setOpenSettingsSection((current) => (current === section ? null : section));
   }
 
   function clearSources() {
@@ -1187,16 +1253,17 @@ export function App() {
         description="Local preferences plus GitHub release updates."
       >
         <div className="space-y-3 p-5">
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">App Updates</p>
-                <p className="mt-2 text-xs text-muted-foreground">{getUpdateSummary(updateState)}</p>
-              </div>
+          <SettingsSection
+            title="App Updates"
+            badge={(
               <Badge tone={getUpdateTone(updateState.status)} dot>
                 {getUpdateStatusLabel(updateState.status)}
               </Badge>
-            </div>
+            )}
+            open={openSettingsSection === 'updates'}
+            onToggle={() => toggleSettingsSection('updates')}
+          >
+            <p className="text-xs text-muted-foreground">{getUpdateSummary(updateState)}</p>
 
             <div className="mt-3 flex flex-wrap gap-2">
               <Badge>current {updateState.currentVersion}</Badge>
@@ -1211,7 +1278,7 @@ export function App() {
             </div>
 
             {updateState.progress && updateState.status === 'downloading' && (
-              <div className="mt-4">
+              <div className="mt-3">
                 <div className="h-2 overflow-hidden rounded-full bg-border">
                   <div
                     className="h-full rounded-full bg-accent transition-[width] duration-300"
@@ -1243,25 +1310,13 @@ export function App() {
                 Restart to install
               </Button>
             </div>
-          </div>
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="text-sm font-semibold text-foreground">Execution Profile</p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Renderer runs sandboxed with a preload bridge. Filesystem writes only happen
-              through validated batch execution and undo in the Electron main process.
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="text-sm font-semibold text-foreground">Platform Rules</p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Preview validation uses{' '}
-              <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">{platform}</code>{' '}
-              filename rules so conflicts and invalid names reflect the current machine.
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="text-sm font-semibold text-foreground">Appearance</p>
-            <div className="mt-3 flex items-center justify-between">
+          </SettingsSection>
+          <SettingsSection
+            title="Appearance"
+            open={openSettingsSection === 'appearance'}
+            onToggle={() => toggleSettingsSection('appearance')}
+          >
+            <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Theme</span>
               <Button size="sm" variant="secondary" onClick={toggleTheme}>
                 {theme === 'dark' ? (
@@ -1271,7 +1326,28 @@ export function App() {
                 )}
               </Button>
             </div>
-          </div>
+          </SettingsSection>
+          <SettingsSection
+            title="Platform Rules"
+            open={openSettingsSection === 'platformRules'}
+            onToggle={() => toggleSettingsSection('platformRules')}
+          >
+            <p className="text-xs text-muted-foreground">
+              Preview validation uses{' '}
+              <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">{platform}</code>{' '}
+              filename rules so conflicts and invalid names reflect the current machine.
+            </p>
+          </SettingsSection>
+          <SettingsSection
+            title="Execution Profile"
+            open={openSettingsSection === 'executionProfile'}
+            onToggle={() => toggleSettingsSection('executionProfile')}
+          >
+            <p className="text-xs text-muted-foreground">
+              Renderer runs sandboxed with a preload bridge. Filesystem writes only happen
+              through validated batch execution and undo in the Electron main process.
+            </p>
+          </SettingsSection>
         </div>
       </Drawer>
 
