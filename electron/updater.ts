@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
 import { app, BrowserWindow } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import type { ProgressInfo, UpdateDownloadedEvent, UpdateInfo } from 'electron-updater';
@@ -12,6 +14,32 @@ function toIsoDate(value?: string | Date) {
 
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
+function getMacUpdaterDisableReason() {
+  if (process.platform !== 'darwin' || !app.isPackaged) {
+    return undefined;
+  }
+
+  const appBundlePath = path.resolve(process.execPath, '..', '..', '..');
+  const result = spawnSync('codesign', ['-dv', '--verbose=4', appBundlePath], {
+    encoding: 'utf8',
+  });
+
+  if (result.status !== 0) {
+    return 'Automatic updates are unavailable because this macOS app build could not be verified for signing.';
+  }
+
+  const output = `${result.stdout}\n${result.stderr}`;
+  const hasDeveloperIdAuthority = output.includes('Authority=Developer ID Application:');
+  const hasTeamIdentifier = !output.includes('TeamIdentifier=not set');
+  const isAdHocSigned = output.includes('Signature=adhoc');
+
+  if (!hasDeveloperIdAuthority || !hasTeamIdentifier || isAdHocSigned) {
+    return 'Automatic updates on macOS require a Developer ID-signed release. Install a signed build manually to enable future in-app updates.';
+  }
+
+  return undefined;
 }
 
 function toBaseState(
@@ -53,6 +81,16 @@ export class AppUpdaterManager {
         status: 'disabled',
         currentVersion: app.getVersion(),
         message: 'Automatic updates are only available in installed release builds.',
+      });
+      return;
+    }
+
+    const macUpdaterDisableReason = getMacUpdaterDisableReason();
+    if (macUpdaterDisableReason) {
+      this.setState({
+        status: 'disabled',
+        currentVersion: app.getVersion(),
+        message: macUpdaterDisableReason,
       });
       return;
     }
