@@ -105,14 +105,60 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           files=()
+          latest_files=()
+          ref_version="${GITHUB_REF_NAME#v}"
+
+          make_latest_name() {
+            local filename="$1"
+            local latest_name="$filename"
+
+            if [[ -n "${GITHUB_REF_NAME}" && "$latest_name" == *"${GITHUB_REF_NAME}"* ]]; then
+              latest_name="${latest_name/${GITHUB_REF_NAME}/latest}"
+            elif [[ -n "${ref_version}" && "$latest_name" == *"${ref_version}"* ]]; then
+              latest_name="${latest_name/${ref_version}/latest}"
+            else
+              case "$latest_name" in
+                *.tar.gz)
+                  latest_name="${latest_name%.tar.gz}-latest.tar.gz"
+                  ;;
+                *.tar.xz)
+                  latest_name="${latest_name%.tar.xz}-latest.tar.xz"
+                  ;;
+                *.tar.bz2)
+                  latest_name="${latest_name%.tar.bz2}-latest.tar.bz2"
+                  ;;
+                *.*)
+                  latest_name="${latest_name%.*}-latest.${latest_name##*.}"
+                  ;;
+                *)
+                  latest_name="${latest_name}-latest"
+                  ;;
+              esac
+            fi
+
+            printf '%s\n' "$latest_name"
+          }
+
           while IFS= read -r file; do
             files+=("$file")
+
+            filename="$(basename "$file")"
+            case "$filename" in
+              *.yml|*.yaml|*.blockmap)
+                continue
+                ;;
+            esac
+
+            latest_name="$(make_latest_name "$filename")"
+            latest_file="release/${latest_name}"
+            cp "$file" "$latest_file"
+            latest_files+=("$latest_file")
           done < <(find release -maxdepth 1 -type f ! -name 'builder-debug.yml' | sort)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No release files found"
             exit 1
           fi
-          gh release upload "${GITHUB_REF_NAME}" "${files[@]}" --repo "${GH_REPO}" --clobber
+          gh release upload "${GITHUB_REF_NAME}" "${files[@]}" "${latest_files[@]}" --repo "${GH_REPO}" --clobber
 
   publish_release:
     name: Publish Release
