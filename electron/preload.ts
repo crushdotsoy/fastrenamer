@@ -32,6 +32,7 @@ const api: AdvancedRenamerApi = {
   getUpdateState: () => ipcRenderer.invoke('updates:getState'),
   checkForUpdates: () => ipcRenderer.invoke('updates:check'),
   quitAndInstallUpdate: () => ipcRenderer.invoke('updates:quitAndInstall'),
+  openUpdateDownload: () => ipcRenderer.invoke('updates:openDownload'),
   onUpdateStateChanged: (listener) => {
     const handler = (_event: Electron.IpcRendererEvent, state: Parameters<typeof listener>[0]) => {
       listener(state);

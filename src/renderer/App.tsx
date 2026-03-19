@@ -27,6 +27,7 @@ import {
   Type,
   Undo2,
   Download,
+  ExternalLink,
   AlertTriangle,
   X,
 } from 'lucide-react';
@@ -444,7 +445,7 @@ interface UpdateToastState {
   title: string;
   description: string;
   actionLabel?: string;
-  actionKind?: 'open-settings' | 'install-update';
+  actionKind?: 'open-settings' | 'install-update' | 'download-update';
 }
 
 function formatBytes(value: number) {
@@ -505,7 +506,9 @@ function getUpdateSummary(state: UpdateState) {
     case 'checking':
       return 'Checking GitHub Releases for a newer version.';
     case 'available':
-      return `Version ${state.availableVersion ?? 'unknown'} is available and downloading in the background.`;
+      return state.manualDownloadOnly
+        ? state.message ?? `Version ${state.availableVersion ?? 'unknown'} is available to download from GitHub Releases.`
+        : `Version ${state.availableVersion ?? 'unknown'} is available and downloading in the background.`;
     case 'downloading':
       return state.progress
         ? `${state.progress.percent.toFixed(0)}% downloaded (${formatBytes(state.progress.transferred)} of ${formatBytes(state.progress.total)}).`
@@ -513,13 +516,17 @@ function getUpdateSummary(state: UpdateState) {
     case 'downloaded':
       return `Version ${state.availableVersion ?? 'unknown'} is ready. Restart the app to install it.`;
     case 'up-to-date':
-      return 'This installation already matches the latest published release.';
+      return state.manualDownloadOnly
+        ? 'This installation matches the latest published release. Future macOS updates will open GitHub for a manual download.'
+        : 'This installation already matches the latest published release.';
     case 'installing':
       return 'Closing the app to install the downloaded update.';
     case 'error':
       return state.message ?? 'The app could not complete the update check.';
     default:
-      return 'Automatic updates are enabled for packaged releases.';
+      return state.manualDownloadOnly
+        ? state.message ?? 'This macOS build checks for updates, but installs must be downloaded manually from GitHub Releases.'
+        : 'Automatic updates are enabled for packaged releases.';
   }
 }
 
@@ -863,9 +870,11 @@ export function App() {
         showUpdateToast({
           tone: 'accent',
           title: 'Update found',
-          description: `Version ${state.availableVersion ?? 'unknown'} is downloading in the background.`,
-          actionLabel: 'Open settings',
-          actionKind: 'open-settings',
+          description: state.manualDownloadOnly
+            ? `Version ${state.availableVersion ?? 'unknown'} is available on GitHub Releases for manual download.`
+            : `Version ${state.availableVersion ?? 'unknown'} is downloading in the background.`,
+          actionLabel: state.manualDownloadOnly ? 'Download update' : 'Open settings',
+          actionKind: state.manualDownloadOnly ? 'download-update' : 'open-settings',
         });
       }
 
@@ -959,6 +968,15 @@ export function App() {
     }
   }
 
+  async function openUpdateDownload() {
+    setUpdateAction('installing');
+    try {
+      await window.advancedRenamer.openUpdateDownload();
+    } finally {
+      setUpdateAction('idle');
+    }
+  }
+
   function handleUpdateToastAction(actionKind?: UpdateToastState['actionKind']) {
     if (!actionKind) {
       return;
@@ -967,6 +985,12 @@ export function App() {
     if (actionKind === 'open-settings') {
       setSettingsDrawerOpen(true);
       setUpdateToast((current) => (current ? { ...current, open: false } : current));
+      return;
+    }
+
+    if (actionKind === 'download-update') {
+      setUpdateToast((current) => (current ? { ...current, open: false } : current));
+      void openUpdateDownload();
       return;
     }
 
@@ -1596,11 +1620,19 @@ export function App() {
               </Button>
               <Button
                 size="sm"
-                disabled={updateState.status !== 'downloaded' || updateAction === 'installing'}
-                onClick={() => void installUpdate()}
+                disabled={
+                  updateState.manualDownloadOnly
+                    ? updateState.status !== 'available' || updateAction === 'installing'
+                    : updateState.status !== 'downloaded' || updateAction === 'installing'
+                }
+                onClick={() => void (updateState.manualDownloadOnly ? openUpdateDownload() : installUpdate())}
               >
-                <Download className="h-3.5 w-3.5" />
-                Restart to install
+                {updateState.manualDownloadOnly ? (
+                  <ExternalLink className="h-3.5 w-3.5" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                {updateState.manualDownloadOnly ? 'Download update' : 'Restart to install'}
               </Button>
             </div>
           </SettingsSection>

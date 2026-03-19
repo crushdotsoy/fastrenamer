@@ -185,6 +185,8 @@ export interface UpdateState {
   checkedAt?: string;
   progress?: UpdateProgress;
   message?: string;
+  manualDownloadOnly?: boolean;
+  downloadUrl?: string;
 }
 
 export interface AdvancedRenamerApi {
@@ -207,6 +209,7 @@ export interface AdvancedRenamerApi {
   getUpdateState(): Promise<UpdateState>;
   checkForUpdates(): Promise<UpdateState>;
   quitAndInstallUpdate(): Promise<boolean>;
+  openUpdateDownload(): Promise<boolean>;
   onUpdateStateChanged(listener: (state: UpdateState) => void): () => void;
 }
 

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain, Menu } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
 import { compareNatural } from '@fast-renamer/rename-engine';
 import type { RenameRule } from '@fast-renamer/rename-engine';
 import {
@@ -197,6 +197,15 @@ function registerIpc() {
   ipcMain.handle('updates:getState', () => updater.getState());
   ipcMain.handle('updates:check', () => updater.checkForUpdates());
   ipcMain.handle('updates:quitAndInstall', () => updater.quitAndInstall());
+  ipcMain.handle('updates:openDownload', async () => {
+    const downloadUrl = updater.getState().downloadUrl;
+    if (!downloadUrl) {
+      return false;
+    }
+
+    await shell.openExternal(downloadUrl);
+    return true;
+  });
 }
 
 app.whenReady().then(() => {

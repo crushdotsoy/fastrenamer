@@ -6,6 +6,7 @@ import type { ProgressInfo, UpdateDownloadedEvent, UpdateInfo } from 'electron-u
 import type { UpdateState } from '../src/shared/contracts';
 
 const UPDATE_CHECK_INTERVAL_MS = 1000 * 60 * 60 * 6;
+const GITHUB_RELEASES_URL = 'https://github.com/crushdotsoy/fastrenamer/releases';
 
 function toIsoDate(value?: string | Date) {
   if (!value) {
@@ -16,7 +17,7 @@ function toIsoDate(value?: string | Date) {
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
-function getMacUpdaterDisableReason() {
+function getMacManualDownloadMessage() {
   if (process.platform !== 'darwin' || !app.isPackaged) {
     return undefined;
   }
@@ -36,21 +37,28 @@ function getMacUpdaterDisableReason() {
   const isAdHocSigned = output.includes('Signature=adhoc');
 
   if (!hasDeveloperIdAuthority || !hasTeamIdentifier || isAdHocSigned) {
-    return 'Automatic updates on macOS require a Developer ID-signed release. Install a signed build manually to enable future in-app updates.';
+    return 'This macOS build is not Developer ID-signed, so updates must be downloaded manually from GitHub Releases.';
   }
 
   return undefined;
 }
 
-function toBaseState(
-  info: UpdateInfo | UpdateDownloadedEvent | undefined,
-  previousState?: UpdateState,
-) {
+function getReleaseDownloadUrl(version?: string) {
+  if (!version) {
+    return `${GITHUB_RELEASES_URL}/latest`;
+  }
+
+  return `${GITHUB_RELEASES_URL}/tag/v${version}`;
+}
+
+function toBaseState(info: UpdateInfo | UpdateDownloadedEvent | undefined, previousState?: UpdateState) {
   return {
     currentVersion: app.getVersion(),
     availableVersion: info?.version ?? previousState?.availableVersion,
     releaseDate: toIsoDate(info?.releaseDate) ?? previousState?.releaseDate,
     releaseName: info?.releaseName ?? previousState?.releaseName,
+    manualDownloadOnly: previousState?.manualDownloadOnly ?? false,
+    downloadUrl: previousState?.downloadUrl,
   };
 }
 
@@ -63,6 +71,8 @@ export class AppUpdaterManager {
   private interval: NodeJS.Timeout | null = null;
   private initialized = false;
   private checking = false;
+  private manualDownloadOnly = false;
+  private manualDownloadMessage?: string;
 
   constructor(private readonly getWindow: () => BrowserWindow | null) {}
 
@@ -85,65 +95,81 @@ export class AppUpdaterManager {
       return;
     }
 
-    const macUpdaterDisableReason = getMacUpdaterDisableReason();
-    if (macUpdaterDisableReason) {
+    this.manualDownloadMessage = getMacManualDownloadMessage();
+    this.manualDownloadOnly = Boolean(this.manualDownloadMessage);
+
+    if (this.manualDownloadOnly) {
       this.setState({
-        status: 'disabled',
-        currentVersion: app.getVersion(),
-        message: macUpdaterDisableReason,
+        ...this.state,
+        manualDownloadOnly: true,
+        message: this.manualDownloadMessage,
+        downloadUrl: `${GITHUB_RELEASES_URL}/latest`,
       });
-      return;
     }
 
-    autoUpdater.autoDownload = true;
+    autoUpdater.autoDownload = !this.manualDownloadOnly;
     autoUpdater.autoInstallOnAppQuit = true;
 
     autoUpdater.on('checking-for-update', () => {
       this.setState({
+        ...toBaseState(undefined, this.state),
         status: 'checking',
         checkedAt: new Date().toISOString(),
-        ...toBaseState(undefined, this.state),
+        message: this.manualDownloadMessage,
       });
     });
 
     autoUpdater.on('update-available', (info) => {
+      const downloadUrl = getReleaseDownloadUrl(info.version);
       this.setState({
+        ...toBaseState(info, this.state),
         status: 'available',
         checkedAt: new Date().toISOString(),
-        ...toBaseState(info, this.state),
+        message: this.manualDownloadOnly
+          ? `Version ${info.version} is available. Open GitHub to download the signed build manually.`
+          : undefined,
+        manualDownloadOnly: this.manualDownloadOnly,
+        downloadUrl,
       });
     });
 
     autoUpdater.on('update-not-available', (info) => {
       this.setState({
+        ...toBaseState(info, this.state),
         status: 'up-to-date',
         checkedAt: new Date().toISOString(),
-        ...toBaseState(info, this.state),
+        message: this.manualDownloadMessage,
+        manualDownloadOnly: this.manualDownloadOnly,
+        downloadUrl: this.manualDownloadOnly ? `${GITHUB_RELEASES_URL}/latest` : undefined,
       });
     });
 
     autoUpdater.on('download-progress', (progress) => {
       this.setState({
+        ...toBaseState(undefined, this.state),
         status: 'downloading',
         checkedAt: this.state.checkedAt ?? new Date().toISOString(),
         progress: this.toProgress(progress),
-        ...toBaseState(undefined, this.state),
+        message: undefined,
       });
     });
 
     autoUpdater.on('update-downloaded', (info) => {
       this.setState({
+        ...toBaseState(info, this.state),
         status: 'downloaded',
         checkedAt: new Date().toISOString(),
-        ...toBaseState(info, this.state),
+        message: undefined,
       });
     });
 
     autoUpdater.on('error', (error) => {
       this.setState({
+        ...toBaseState(undefined, this.state),
         status: 'error',
         checkedAt: new Date().toISOString(),
-        ...toBaseState(undefined, this.state),
+        manualDownloadOnly: this.manualDownloadOnly,
+        downloadUrl: this.manualDownloadOnly ? `${GITHUB_RELEASES_URL}/latest` : this.state.downloadUrl,
         message: error.message || 'Failed to check for updates.',
       });
     });
@@ -176,9 +202,11 @@ export class AppUpdaterManager {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to check for updates.';
       this.setState({
+        ...toBaseState(undefined, this.state),
         status: 'error',
         checkedAt: new Date().toISOString(),
-        ...toBaseState(undefined, this.state),
+        manualDownloadOnly: this.manualDownloadOnly,
+        downloadUrl: this.manualDownloadOnly ? `${GITHUB_RELEASES_URL}/latest` : this.state.downloadUrl,
         message,
       });
     } finally {
