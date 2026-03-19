@@ -15,7 +15,7 @@ import {
   Hash,
   Info,
   Minus,
-  Moon,
+  Palette,
   Plus,
   RefreshCcw,
   Replace,
@@ -23,7 +23,6 @@ import {
   Scissors,
   Settings2,
   Square,
-  Sun,
   Trash2,
   Type,
   Undo2,
@@ -71,6 +70,22 @@ import {
   Tooltip,
   cn,
 } from './components/ui';
+import {
+  ACTIVE_THEME_STORAGE_KEY,
+  CUSTOM_THEMES_STORAGE_KEY,
+  DEFAULT_THEME_ID,
+  getAllThemes,
+  getThemeSnapshot,
+  LEGACY_THEME_STORAGE_KEY,
+  migrateLegacyThemeId,
+  resolveTheme,
+  THEME_SNAPSHOT_STORAGE_KEY,
+  THEME_TOKEN_FIELDS,
+  type AppTheme,
+  type ThemeTokenKey,
+  type ThemeTokens,
+  createCustomTheme,
+} from './themes';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -159,7 +174,6 @@ const SOURCE_LIST_COLLATOR = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: 'base',
 });
-const THEME_STORAGE_KEY = 'theme';
 const LEFT_WIDTH_STORAGE_KEY = 'left_panel_width';
 const DEFAULT_LEFT_WIDTH_RATIO = 0.28;
 const MIN_LEFT_WIDTH_RATIO = 0.18;
@@ -234,22 +248,182 @@ function sortSourceSelections(sources: SourceSelection[]) {
   return [...sources].sort((left, right) => SOURCE_LIST_COLLATOR.compare(left.path, right.path));
 }
 
-function useTheme() {
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    return stored === 'light' ? 'light' : 'dark';
+const THEME_TOKEN_CSS_VARIABLES: Record<ThemeTokenKey, string> = {
+  background: '--background',
+  foreground: '--foreground',
+  card: '--card',
+  cardForeground: '--card-foreground',
+  surface: '--surface',
+  surfaceElevated: '--surface-elevated',
+  border: '--border',
+  muted: '--muted',
+  mutedForeground: '--muted-foreground',
+  accent: '--accent',
+  accentForeground: '--accent-foreground',
+  destructive: '--destructive',
+  ring: '--ring',
+  statusOk: '--status-ok',
+  statusConflict: '--status-conflict',
+  statusInvalid: '--status-invalid',
+  statusUnchanged: '--status-unchanged',
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function parseStoredThemeTokens(value: unknown): ThemeTokens | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const tokens = {} as ThemeTokens;
+  for (const field of THEME_TOKEN_FIELDS) {
+    const tokenValue = value[field.key];
+    if (typeof tokenValue !== 'string') {
+      return null;
+    }
+    tokens[field.key] = tokenValue;
+  }
+
+  return tokens;
+}
+
+function parseStoredCustomThemes() {
+  try {
+    const stored = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);
+    if (!stored) {
+      return [];
+    }
+
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.flatMap((theme): AppTheme[] => {
+      if (!isRecord(theme)) {
+        return [];
+      }
+
+      const baseThemeId = theme.baseThemeId === 'light' || theme.baseThemeId === 'dark'
+        ? theme.baseThemeId
+        : theme.colorScheme === 'light' || theme.colorScheme === 'dark'
+          ? theme.colorScheme
+        : null;
+      const tokens = parseStoredThemeTokens(theme.tokens);
+
+      if (!baseThemeId || !tokens) {
+        return [];
+      }
+
+      return [{
+        id: typeof theme.id === 'string' && theme.id ? theme.id : `custom-${crypto.randomUUID()}`,
+        name: typeof theme.name === 'string' && theme.name.trim() ? theme.name : 'Custom Theme',
+        description: typeof theme.description === 'string' && theme.description.trim()
+          ? theme.description
+          : 'User-created theme.',
+        baseThemeId,
+        tokens,
+        kind: 'custom',
+      }];
+    });
+  } catch {
+    return [];
+  }
+}
+
+function applyTheme(theme: AppTheme) {
+  const root = document.documentElement;
+
+  root.dataset.theme = theme.id;
+  root.dataset.colorScheme = theme.baseThemeId;
+
+  for (const field of THEME_TOKEN_FIELDS) {
+    root.style.setProperty(THEME_TOKEN_CSS_VARIABLES[field.key], theme.tokens[field.key]);
+  }
+}
+
+function useThemeManager() {
+  const [customThemes, setCustomThemes] = useState<AppTheme[]>(() => parseStoredCustomThemes());
+  const [activeThemeId, setActiveThemeId] = useState(() => {
+    const storedThemeId = localStorage.getItem(ACTIVE_THEME_STORAGE_KEY);
+    if (storedThemeId) {
+      return migrateLegacyThemeId(storedThemeId);
+    }
+
+    return migrateLegacyThemeId(localStorage.getItem(LEGACY_THEME_STORAGE_KEY));
   });
 
+  const themes = useMemo(() => getAllThemes(customThemes), [customThemes]);
+  const theme = useMemo(() => resolveTheme(activeThemeId, customThemes), [activeThemeId, customThemes]);
+
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    if (!themes.some((candidate) => candidate.id === activeThemeId)) {
+      setActiveThemeId(theme.id);
     }
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [activeThemeId, theme.id, themes]);
+
+  useEffect(() => {
+    applyTheme(theme);
+    localStorage.setItem(ACTIVE_THEME_STORAGE_KEY, theme.id);
+    localStorage.setItem(THEME_SNAPSHOT_STORAGE_KEY, JSON.stringify(getThemeSnapshot(theme)));
+    localStorage.removeItem(LEGACY_THEME_STORAGE_KEY);
   }, [theme]);
 
-  return { theme, toggleTheme: () => setTheme((t) => (t === 'dark' ? 'light' : 'dark')) };
+  useEffect(() => {
+    localStorage.setItem(CUSTOM_THEMES_STORAGE_KEY, JSON.stringify(customThemes));
+  }, [customThemes]);
+
+  function createThemeFrom(themeToClone: AppTheme) {
+    const nextTheme = createCustomTheme(themeToClone);
+    setCustomThemes((current) => [nextTheme, ...current]);
+    setActiveThemeId(nextTheme.id);
+  }
+
+  return {
+    theme,
+    themes,
+    setTheme: (themeId: string) => setActiveThemeId(migrateLegacyThemeId(themeId)),
+    cycleTheme: () => {
+      const currentIndex = themes.findIndex((candidate) => candidate.id === theme.id);
+      const nextTheme = themes[(currentIndex + 1 + themes.length) % themes.length] ?? themes[0];
+      if (nextTheme) {
+        setActiveThemeId(nextTheme.id);
+      }
+    },
+    createThemeFromActive: () => createThemeFrom(theme),
+    createThemeFromId: (themeId: string) => {
+      const sourceTheme = themes.find((candidate) => candidate.id === themeId);
+      if (sourceTheme) {
+        createThemeFrom(sourceTheme);
+      }
+    },
+    renameCustomTheme: (themeId: string, name: string) => {
+      setCustomThemes((current) =>
+        current.map((candidate) =>
+          candidate.id === themeId
+            ? { ...candidate, name, description: `Custom theme based on ${name || 'your palette'}.` }
+            : candidate,
+        ),
+      );
+    },
+    updateCustomThemeToken: (themeId: string, token: ThemeTokenKey, value: string) => {
+      setCustomThemes((current) =>
+        current.map((candidate) =>
+          candidate.id === themeId
+            ? { ...candidate, tokens: { ...candidate.tokens, [token]: value } }
+            : candidate,
+        ),
+      );
+    },
+    deleteCustomTheme: (themeId: string) => {
+      setCustomThemes((current) => current.filter((candidate) => candidate.id !== themeId));
+      if (theme.id === themeId) {
+        setActiveThemeId(DEFAULT_THEME_ID);
+      }
+    },
+  };
 }
 
 const DEFAULT_WINDOW_STATE: WindowState = {
@@ -410,11 +584,128 @@ function SettingsSection({
   );
 }
 
+function ThemeOptionCard({
+  theme,
+  active,
+  onSelect,
+  onDuplicate,
+}: {
+  theme: AppTheme;
+  active: boolean;
+  onSelect: () => void;
+  onDuplicate: () => void;
+}) {
+  const swatches = [
+    theme.tokens.background,
+    theme.tokens.card,
+    theme.tokens.surface,
+    theme.tokens.accent,
+    theme.tokens.destructive,
+  ];
+
+  return (
+    <div
+      className={cn(
+        'rounded-xl border p-3 transition-colors',
+        active ? 'border-accent bg-accent/8' : 'border-border bg-card',
+      )}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        className="w-full text-left"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-foreground">{theme.name}</p>
+              <Badge tone={active ? 'accent' : 'default'}>
+                {active ? 'Active' : theme.kind === 'custom' ? 'Custom' : 'Preset'}
+              </Badge>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{theme.description}</p>
+          </div>
+          <span
+            className="mt-0.5 h-3 w-3 shrink-0 rounded-full border border-border"
+            style={{ backgroundColor: theme.tokens.accent }}
+          />
+        </div>
+
+        <div className="mt-3 flex gap-1.5">
+          {swatches.map((color, index) => (
+            <span
+              key={`${theme.id}-swatch-${index}`}
+              className="h-7 flex-1 rounded-md border border-border/70"
+              style={{ backgroundColor: color }}
+            />
+          ))}
+        </div>
+      </button>
+
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+        <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+          {theme.baseThemeId}
+        </span>
+        <Button size="sm" variant="ghost" onClick={onDuplicate}>
+          <Copy className="h-3.5 w-3.5" />
+          Copy
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ThemeTokenEditor({
+  label,
+  description,
+  value,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="rounded-xl border border-border bg-card p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">{label}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{description}</p>
+        </div>
+        <code className="rounded-md bg-surface px-2 py-1 text-[11px] text-muted-foreground">
+          {value}
+        </code>
+      </div>
+
+      <div className="mt-3 flex items-center gap-3">
+        <input
+          type="color"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-10 w-12 cursor-pointer rounded-md border border-border bg-transparent p-1"
+        />
+        <div className="h-10 flex-1 rounded-lg border border-border" style={{ backgroundColor: value }} />
+      </div>
+    </label>
+  );
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export function App() {
   const platform = useMemo(detectPlatform, []);
-  const { theme, toggleTheme } = useTheme();
+  const {
+    theme,
+    themes,
+    setTheme,
+    cycleTheme,
+    createThemeFromActive,
+    createThemeFromId,
+    renameCustomTheme,
+    updateCustomThemeToken,
+    deleteCustomTheme,
+  } = useThemeManager();
 
   const [sources, setSources] = useState<SourceSelection[]>([]);
   const [sourceMode, setSourceMode] = useState<SourceMode>('picked_files');
@@ -879,6 +1170,7 @@ export function App() {
     ? 'Use Dropped Items'
     : SOURCE_MODE_META[draftSourceMode].pickerLabel;
   const sourceDialogRootCount = pendingDroppedSources?.length ?? sources.length;
+  const activeCustomTheme = theme.kind === 'custom' ? theme : null;
 
   return (
     <div
@@ -918,6 +1210,7 @@ export function App() {
           <TopBar
             platform={platform}
             theme={theme}
+            themes={themes}
             windowState={windowState}
             sourceCount={sources.length}
             selectedLabel={getSelectedLabel(sources)}
@@ -933,7 +1226,7 @@ export function App() {
             onOpenPresets={() => setPresetDrawerOpen(true)}
             onOpenHistory={() => setHistoryDrawerOpen(true)}
             onOpenSettings={() => setSettingsDrawerOpen(true)}
-            onToggleTheme={toggleTheme}
+            onSelectTheme={setTheme}
             onMinimizeWindow={() => void window.advancedRenamer.minimizeWindow()}
             onToggleMaximizeWindow={() =>
               void window.advancedRenamer.toggleMaximizeWindow().then(setWindowState)
@@ -1313,18 +1606,96 @@ export function App() {
           </SettingsSection>
           <SettingsSection
             title="Appearance"
+            badge={<Badge tone="accent">{theme.name}</Badge>}
             open={openSettingsSection === 'appearance'}
             onToggle={() => toggleSettingsSection('appearance')}
           >
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Theme</span>
-              <Button size="sm" variant="secondary" onClick={toggleTheme}>
-                {theme === 'dark' ? (
-                  <><Sun className="h-3.5 w-3.5" /> Switch to Light</>
-                ) : (
-                  <><Moon className="h-3.5 w-3.5" /> Switch to Dark</>
-                )}
-              </Button>
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-border bg-card p-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Theme library</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Pick any preset, then clone it when you want to make your own palette.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="secondary" onClick={cycleTheme}>
+                    <Palette className="h-3.5 w-3.5" />
+                    Cycle
+                  </Button>
+                  <Button size="sm" onClick={createThemeFromActive}>
+                    <Plus className="h-3.5 w-3.5" />
+                    New Custom from Current
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid gap-3 lg:grid-cols-2">
+                {themes.map((candidate) => (
+                  <ThemeOptionCard
+                    key={candidate.id}
+                    theme={candidate}
+                    active={candidate.id === theme.id}
+                    onSelect={() => setTheme(candidate.id)}
+                    onDuplicate={() => createThemeFromId(candidate.id)}
+                  />
+                ))}
+              </div>
+
+              {activeCustomTheme ? (
+                <div className="space-y-4 rounded-xl border border-border bg-surface/60 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Edit Custom Theme</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Changes save instantly and apply across the app.
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => deleteCustomTheme(activeCustomTheme.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete Custom Theme
+                    </Button>
+                  </div>
+
+                  <label className="space-y-2">
+                    <span className="text-xs text-muted-foreground">Theme name</span>
+                    <Input
+                      value={activeCustomTheme.name}
+                      onChange={(event) => renameCustomTheme(activeCustomTheme.id, event.target.value)}
+                      onBlur={(event) => {
+                        const nextName = event.target.value.trim() || 'Custom Theme';
+                        if (nextName !== activeCustomTheme.name) {
+                          renameCustomTheme(activeCustomTheme.id, nextName);
+                        }
+                      }}
+                      placeholder="Custom Theme"
+                    />
+                  </label>
+
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    {THEME_TOKEN_FIELDS.map((field) => (
+                      <ThemeTokenEditor
+                        key={field.key}
+                        label={field.label}
+                        description={field.description}
+                        value={activeCustomTheme.tokens[field.key]}
+                        onChange={(value) => updateCustomThemeToken(activeCustomTheme.id, field.key, value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border bg-card/70 p-4">
+                  <p className="text-sm font-semibold text-foreground">Custom theme editor</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Presets are read-only. Create a custom theme from the current selection to edit every token.
+                  </p>
+                </div>
+              )}
             </div>
           </SettingsSection>
           <SettingsSection
@@ -1413,6 +1784,7 @@ export function App() {
 function TopBar({
   platform,
   theme,
+  themes,
   windowState,
   sourceCount,
   selectedLabel,
@@ -1428,13 +1800,14 @@ function TopBar({
   onOpenPresets,
   onOpenHistory,
   onOpenSettings,
-  onToggleTheme,
+  onSelectTheme,
   onMinimizeWindow,
   onToggleMaximizeWindow,
   onCloseWindow,
 }: {
   platform: PlatformTarget;
-  theme: 'dark' | 'light';
+  theme: AppTheme;
+  themes: AppTheme[];
   windowState: WindowState;
   sourceCount: number;
   selectedLabel: string;
@@ -1450,12 +1823,14 @@ function TopBar({
   onOpenPresets: () => void;
   onOpenHistory: () => void;
   onOpenSettings: () => void;
-  onToggleTheme: () => void;
+  onSelectTheme: (themeId: string) => void;
   onMinimizeWindow: () => void;
   onToggleMaximizeWindow: () => void;
   onCloseWindow: () => void;
 }) {
   const isMac = platform === 'darwin';
+  const topBarGhostButtonClassName =
+    'border border-transparent hover:border-accent/30 hover:bg-surface-elevated hover:text-foreground';
 
   return (
     <Panel className="overflow-visible">
@@ -1486,21 +1861,22 @@ function TopBar({
           <Button
             variant="ghost"
             size="sm"
+            className={topBarGhostButtonClassName}
             onClick={onClearSources}
             disabled={sourceCount === 0}
           >
             <Trash2 className="h-3.5 w-3.5" />
             Clear
           </Button>
-          <Button variant="ghost" size="sm" onClick={onOpenPresets}>
+          <Button variant="ghost" size="sm" className={topBarGhostButtonClassName} onClick={onOpenPresets}>
             <Save className="h-3.5 w-3.5" />
             Presets
           </Button>
-          <Button variant="ghost" size="sm" onClick={onOpenHistory}>
+          <Button variant="ghost" size="sm" className={topBarGhostButtonClassName} onClick={onOpenHistory}>
             <Clock3 className="h-3.5 w-3.5" />
             History
           </Button>
-          <Button variant="ghost" size="sm" onClick={onOpenSettings}>
+          <Button variant="ghost" size="sm" className={topBarGhostButtonClassName} onClick={onOpenSettings}>
             <Settings2 className="h-3.5 w-3.5" />
             Settings
           </Button>
@@ -1548,11 +1924,32 @@ function TopBar({
 
           <div className="h-6 w-px bg-border mx-0.5" />
 
-          <Tooltip content={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}>
-            <IconButton onClick={onToggleTheme} aria-label="Toggle theme">
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </IconButton>
-          </Tooltip>
+          <DropdownMenuRoot>
+            <DropdownMenuTrigger asChild>
+              <IconButton aria-label={`Choose theme. Current theme: ${theme.name}`}>
+                <Palette className="h-4 w-4" />
+              </IconButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-56">
+              <DropdownMenuLabel>Themes</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {themes.map((candidate) => (
+                <DropdownMenuItem key={candidate.id} onClick={() => onSelectTheme(candidate.id)}>
+                  <span
+                    className="h-3 w-3 rounded-full border border-border"
+                    style={{ backgroundColor: candidate.tokens.accent }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium">{candidate.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {candidate.kind === 'custom' ? 'Custom' : 'Preset'}
+                    </div>
+                  </div>
+                  {candidate.id === theme.id && <CheckCircle2 className="h-4 w-4 text-accent" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenuRoot>
 
           {!isMac && (
             <>
@@ -1583,7 +1980,7 @@ function TopBar({
                 </Tooltip>
                 <Tooltip content="Close">
                   <IconButton
-                    className="h-8 w-8 rounded-lg hover:bg-destructive/90 hover:text-white dark:hover:text-[#080c14]"
+                    className="h-8 w-8 rounded-lg hover:bg-destructive/90 hover:text-white"
                     onClick={onCloseWindow}
                     aria-label="Close window"
                   >
