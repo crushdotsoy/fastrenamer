@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.2",
   "description": "Desktop batch renaming utility built with Bun, Electron, React, and TypeScript.",
-  "author": "Mário Gomes <mario@gomes.lol>",
+  "author": "crushdotsoy",
   "type": "module",
   "workspaces": ["packages/*"],
   "main": "dist-electron/main.js",
