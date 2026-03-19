@@ -65,5 +65,6 @@ bun run start
 ## Notes
 
 - UI preferences such as theme and panel width persist across restarts.
+- Packaged releases can check GitHub Releases for updates automatically, download them in the background, and install on restart.
 - Undo is blocked when current renamed files are missing, restore targets are occupied, or older batches overlap with newer undo-ready batches.
-- This repository currently builds the app, but it does not yet include a packaged installer pipeline for macOS or Windows.
+- Release tags trigger packaged artifacts through GitHub Actions.

@@ -1,6 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import * as SwitchPrimitive from '@radix-ui/react-switch';
+import * as ToastPrimitive from '@radix-ui/react-toast';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { X } from 'lucide-react';
 import type {
@@ -417,6 +418,87 @@ export function Drawer({
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+
+export const ToastProvider = ToastPrimitive.Provider;
+
+export function ToastViewport({ className }: { className?: string }) {
+  return (
+    <ToastPrimitive.Viewport
+      className={cn(
+        'fixed right-4 top-4 z-[60] flex w-[min(22rem,calc(100vw-2rem))] max-w-full flex-col gap-2 outline-none',
+        className,
+      )}
+    />
+  );
+}
+
+export function Toast({
+  className,
+  tone = 'default',
+  ...props
+}: ToastPrimitive.ToastProps & { tone?: 'default' | 'ok' | 'accent' | 'conflict' }) {
+  return (
+    <ToastPrimitive.Root
+      className={cn(
+        'group rounded-xl border bg-card p-4 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-card/95',
+        'transition-all duration-200',
+        'data-[state=closed]:pointer-events-none data-[state=closed]:-translate-y-2 data-[state=closed]:opacity-0',
+        'data-[state=open]:translate-y-0 data-[state=open]:opacity-100',
+        'data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]',
+        'data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-transform',
+        'data-[swipe=end]:translate-x-[calc(100%+1rem)] data-[swipe=end]:opacity-0',
+        tone === 'default' && 'border-border',
+        tone === 'ok' && 'border-ok/30 bg-ok/10',
+        tone === 'accent' && 'border-accent/30 bg-accent/10',
+        tone === 'conflict' && 'border-conflict/30 bg-conflict/10',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export function ToastTitle({ className, ...props }: ToastPrimitive.ToastTitleProps) {
+  return <ToastPrimitive.Title className={cn('text-sm font-semibold text-foreground', className)} {...props} />;
+}
+
+export function ToastDescription({
+  className,
+  ...props
+}: ToastPrimitive.ToastDescriptionProps) {
+  return <ToastPrimitive.Description className={cn('mt-1 text-xs text-muted-foreground', className)} {...props} />;
+}
+
+export function ToastAction({
+  className,
+  ...props
+}: ToastPrimitive.ToastActionProps) {
+  return (
+    <ToastPrimitive.Action
+      className={cn(
+        'inline-flex h-8 items-center justify-center rounded-lg border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:bg-surface-elevated',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export function ToastClose({ className, ...props }: ToastPrimitive.ToastCloseProps) {
+  return (
+    <ToastPrimitive.Close
+      className={cn(
+        'absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface hover:text-foreground',
+        className,
+      )}
+      {...props}
+    >
+      <X className="h-4 w-4" />
+    </ToastPrimitive.Close>
   );
 }
 

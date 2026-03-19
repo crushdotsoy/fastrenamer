@@ -19,9 +19,11 @@ import {
   pickableSource,
   undoRenameBatch,
 } from './rename-service';
+import { AppUpdaterManager } from './updater';
 
 let mainWindow: BrowserWindow | null = null;
 let database: AppDatabase;
+let updater: AppUpdaterManager;
 const mainDir = path.dirname(fileURLToPath(import.meta.url));
 
 const getPlatform = () => process.platform as 'darwin' | 'win32' | 'linux';
@@ -191,13 +193,19 @@ function registerIpc() {
     const window = BrowserWindow.fromWebContents(event.sender);
     return window ? serializeWindowState(window) : DEFAULT_WINDOW_STATE;
   });
+
+  ipcMain.handle('updates:getState', () => updater.getState());
+  ipcMain.handle('updates:check', () => updater.checkForUpdates());
+  ipcMain.handle('updates:quitAndInstall', () => updater.quitAndInstall());
 }
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   database = new AppDatabase();
+  updater = new AppUpdaterManager(() => mainWindow);
   registerIpc();
   createWindow();
+  updater.initialize();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -210,4 +218,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', () => {
+  updater?.dispose();
 });

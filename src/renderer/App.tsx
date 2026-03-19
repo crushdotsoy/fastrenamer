@@ -1,5 +1,6 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  CheckCircle2,
   Braces,
   Calendar,
   CaseSensitive,
@@ -12,6 +13,7 @@ import {
   FileInput,
   GripVertical,
   Hash,
+  Info,
   Minus,
   Moon,
   Plus,
@@ -25,6 +27,8 @@ import {
   Trash2,
   Type,
   Undo2,
+  Download,
+  AlertTriangle,
   X,
 } from 'lucide-react';
 import type { DragEvent } from 'react';
@@ -37,7 +41,7 @@ import type {
   RenameRule,
   SourceSelection,
 } from '@fast-renamer/rename-engine';
-import type { WindowState } from '@shared/contracts';
+import type { UpdateState, WindowState } from '@shared/contracts';
 import {
   Badge,
   Button,
@@ -57,6 +61,13 @@ import {
   PanelHeader,
   Select,
   Switch,
+  Toast,
+  ToastAction,
+  ToastClose,
+  ToastDescription,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
   Tooltip,
   cn,
 } from './components/ui';
@@ -245,6 +256,99 @@ const DEFAULT_WINDOW_STATE: WindowState = {
   isMaximized: false,
 };
 
+const DEFAULT_UPDATE_STATE: UpdateState = {
+  status: 'idle',
+  currentVersion: '0.0.0',
+};
+
+type UpdateToastTone = 'default' | 'ok' | 'accent' | 'conflict';
+
+interface UpdateToastState {
+  id: number;
+  open: boolean;
+  tone: UpdateToastTone;
+  title: string;
+  description: string;
+  actionLabel?: string;
+  actionKind?: 'open-settings' | 'install-update';
+}
+
+function formatBytes(value: number) {
+  if (!Number.isFinite(value) || value <= 0) {
+    return '0 B';
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const exponent = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
+  const scaled = value / 1024 ** exponent;
+  return `${scaled >= 10 || exponent === 0 ? scaled.toFixed(0) : scaled.toFixed(1)} ${units[exponent]}`;
+}
+
+function getUpdateTone(status: UpdateState['status']) {
+  switch (status) {
+    case 'downloaded':
+    case 'up-to-date':
+      return 'ok';
+    case 'available':
+    case 'downloading':
+    case 'checking':
+    case 'installing':
+      return 'accent';
+    case 'error':
+      return 'conflict';
+    default:
+      return 'default';
+  }
+}
+
+function getUpdateStatusLabel(status: UpdateState['status']) {
+  switch (status) {
+    case 'idle':
+      return 'idle';
+    case 'disabled':
+      return 'packaged builds only';
+    case 'checking':
+      return 'checking';
+    case 'available':
+      return 'update found';
+    case 'downloading':
+      return 'downloading';
+    case 'downloaded':
+      return 'ready to install';
+    case 'up-to-date':
+      return 'up to date';
+    case 'installing':
+      return 'installing';
+    case 'error':
+      return 'update error';
+  }
+}
+
+function getUpdateSummary(state: UpdateState) {
+  switch (state.status) {
+    case 'disabled':
+      return state.message ?? 'Install a packaged GitHub release to enable automatic updates.';
+    case 'checking':
+      return 'Checking GitHub Releases for a newer version.';
+    case 'available':
+      return `Version ${state.availableVersion ?? 'unknown'} is available and downloading in the background.`;
+    case 'downloading':
+      return state.progress
+        ? `${state.progress.percent.toFixed(0)}% downloaded (${formatBytes(state.progress.transferred)} of ${formatBytes(state.progress.total)}).`
+        : 'Downloading the latest release in the background.';
+    case 'downloaded':
+      return `Version ${state.availableVersion ?? 'unknown'} is ready. Restart the app to install it.`;
+    case 'up-to-date':
+      return 'This installation already matches the latest published release.';
+    case 'installing':
+      return 'Closing the app to install the downloaded update.';
+    case 'error':
+      return state.message ?? 'The app could not complete the update check.';
+    default:
+      return 'Automatic updates are enabled for packaged releases.';
+  }
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export function App() {
@@ -277,6 +381,9 @@ export function App() {
   const [pendingDroppedSources, setPendingDroppedSources] = useState<SourceSelection[] | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [windowState, setWindowState] = useState<WindowState>(DEFAULT_WINDOW_STATE);
+  const [updateState, setUpdateState] = useState<UpdateState>(DEFAULT_UPDATE_STATE);
+  const [updateAction, setUpdateAction] = useState<'idle' | 'checking' | 'installing'>('idle');
+  const [updateToast, setUpdateToast] = useState<UpdateToastState | null>(null);
 
   const [leftWidthRatio, setLeftWidthRatio] = useState(() => {
     const stored = Number(localStorage.getItem(LEFT_WIDTH_STORAGE_KEY));
@@ -295,6 +402,8 @@ export function App() {
   const resizeStartX = useRef(0);
   const resizeStartWidthRatio = useRef(0);
   const resizeContainerWidth = useRef(0);
+  const previousUpdateStatus = useRef<UpdateState['status'] | null>(null);
+  const updateToastId = useRef(0);
 
   const sourcePaths = useMemo(() => sources.map((s) => s.path), [sources]);
   const previewRequest = useMemo(
@@ -377,6 +486,83 @@ export function App() {
     };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const handleUpdateStateChange = (state: UpdateState, notify: boolean) => {
+      previousUpdateStatus.current = state.status;
+      setUpdateState(state);
+      setUpdateAction((current) => {
+        if (state.status === 'checking') {
+          return current === 'installing' ? current : 'checking';
+        }
+        if (state.status === 'installing') {
+          return 'installing';
+        }
+        return 'idle';
+      });
+
+      if (!notify) {
+        return;
+      }
+
+      if (state.status === 'available') {
+        showUpdateToast({
+          tone: 'accent',
+          title: 'Update found',
+          description: `Version ${state.availableVersion ?? 'unknown'} is downloading in the background.`,
+          actionLabel: 'Open settings',
+          actionKind: 'open-settings',
+        });
+      }
+
+      if (state.status === 'downloaded') {
+        showUpdateToast({
+          tone: 'ok',
+          title: 'Update ready',
+          description: `Version ${state.availableVersion ?? 'unknown'} is ready to install.`,
+          actionLabel: 'Restart now',
+          actionKind: 'install-update',
+        });
+      }
+
+      if (state.status === 'error') {
+        showUpdateToast({
+          tone: 'conflict',
+          title: 'Update failed',
+          description: state.message ?? 'The app could not complete the update check.',
+          actionLabel: 'Open settings',
+          actionKind: 'open-settings',
+        });
+      }
+    };
+
+    void window.advancedRenamer.getUpdateState().then((state) => {
+      if (!mounted) {
+        return;
+      }
+      previousUpdateStatus.current = state.status;
+      setUpdateState(state);
+    });
+
+    const unsubscribe = window.advancedRenamer.onUpdateStateChanged((state) => {
+      if (!mounted) {
+        return;
+      }
+
+      const shouldNotify =
+        state.status !== previousUpdateStatus.current &&
+        (state.status === 'available' || state.status === 'downloaded' || state.status === 'error');
+
+      handleUpdateStateChange(state, shouldNotify);
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
+
   async function reloadMetadata() {
     const [presetList, historyList] = await Promise.all([
       window.advancedRenamer.listPresets(),
@@ -386,11 +572,52 @@ export function App() {
     setHistory(historyList);
   }
 
+  function showUpdateToast(input: Omit<UpdateToastState, 'id' | 'open'>) {
+    updateToastId.current += 1;
+    setUpdateToast({
+      id: updateToastId.current,
+      open: true,
+      ...input,
+    });
+  }
+
   function openAddSources() {
     setPendingDroppedSources(null);
     setDraftSourceMode(sourceMode);
     setDraftFileNamePattern(fileNamePattern);
     setAddSourcesOpen(true);
+  }
+
+  async function checkForUpdates() {
+    setUpdateAction('checking');
+    try {
+      const nextState = await window.advancedRenamer.checkForUpdates();
+      setUpdateState(nextState);
+    } finally {
+      setUpdateAction((current) => (current === 'checking' ? 'idle' : current));
+    }
+  }
+
+  async function installUpdate() {
+    setUpdateAction('installing');
+    const started = await window.advancedRenamer.quitAndInstallUpdate();
+    if (!started) {
+      setUpdateAction('idle');
+    }
+  }
+
+  function handleUpdateToastAction(actionKind?: UpdateToastState['actionKind']) {
+    if (!actionKind) {
+      return;
+    }
+
+    if (actionKind === 'open-settings') {
+      setSettingsDrawerOpen(true);
+      setUpdateToast((current) => (current ? { ...current, open: false } : current));
+      return;
+    }
+
+    void installUpdate();
   }
 
   function clearSources() {
@@ -957,9 +1184,66 @@ export function App() {
         open={settingsDrawerOpen}
         onOpenChange={setSettingsDrawerOpen}
         title="Settings"
-        description="v1 keeps settings intentionally light and local."
+        description="Local preferences plus GitHub release updates."
       >
         <div className="space-y-3 p-5">
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">App Updates</p>
+                <p className="mt-2 text-xs text-muted-foreground">{getUpdateSummary(updateState)}</p>
+              </div>
+              <Badge tone={getUpdateTone(updateState.status)} dot>
+                {getUpdateStatusLabel(updateState.status)}
+              </Badge>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Badge>current {updateState.currentVersion}</Badge>
+              {updateState.availableVersion && updateState.availableVersion !== updateState.currentVersion && (
+                <Badge tone="accent">latest {updateState.availableVersion}</Badge>
+              )}
+              {updateState.checkedAt && (
+                <Badge tone="unchanged">
+                  checked {new Date(updateState.checkedAt).toLocaleString()}
+                </Badge>
+              )}
+            </div>
+
+            {updateState.progress && updateState.status === 'downloading' && (
+              <div className="mt-4">
+                <div className="h-2 overflow-hidden rounded-full bg-border">
+                  <div
+                    className="h-full rounded-full bg-accent transition-[width] duration-300"
+                    style={{ width: `${Math.max(4, Math.min(100, updateState.progress.percent))}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  {updateState.progress.percent.toFixed(0)}% at {formatBytes(updateState.progress.bytesPerSecond)}/s
+                </p>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={updateAction !== 'idle' || updateState.status === 'disabled'}
+                onClick={() => void checkForUpdates()}
+              >
+                <RefreshCcw className={cn('h-3.5 w-3.5', updateAction === 'checking' && 'animate-spin')} />
+                Check now
+              </Button>
+              <Button
+                size="sm"
+                disabled={updateState.status !== 'downloaded' || updateAction === 'installing'}
+                onClick={() => void installUpdate()}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Restart to install
+              </Button>
+            </div>
+          </div>
           <div className="rounded-xl border border-border bg-surface p-4">
             <p className="text-sm font-semibold text-foreground">Execution Profile</p>
             <p className="mt-2 text-xs text-muted-foreground">
@@ -990,6 +1274,60 @@ export function App() {
           </div>
         </div>
       </Drawer>
+
+      <ToastProvider swipeDirection="right">
+        {updateToast && (
+          <Toast
+            key={updateToast.id}
+            open={updateToast.open}
+            onOpenChange={(open) => {
+              setUpdateToast((current) => (current ? { ...current, open } : current));
+            }}
+            tone={updateToast.tone}
+            duration={updateToast.actionKind === 'install-update' ? 12000 : 7000}
+          >
+            <div className="pr-8">
+              <div className="flex items-start gap-3">
+                <div
+                  className={cn(
+                    'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                    updateToast.tone === 'ok' && 'bg-ok/15 text-ok',
+                    updateToast.tone === 'accent' && 'bg-accent/15 text-accent',
+                    updateToast.tone === 'conflict' && 'bg-conflict/15 text-conflict',
+                    updateToast.tone === 'default' && 'bg-surface text-foreground',
+                  )}
+                >
+                  {updateToast.tone === 'ok' ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : updateToast.tone === 'conflict' ? (
+                    <AlertTriangle className="h-4 w-4" />
+                  ) : updateToast.actionKind === 'install-update' ? (
+                    <Download className="h-4 w-4" />
+                  ) : (
+                    <Info className="h-4 w-4" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <ToastTitle>{updateToast.title}</ToastTitle>
+                  <ToastDescription>{updateToast.description}</ToastDescription>
+                </div>
+              </div>
+              {updateToast.actionLabel && (
+                <div className="mt-3 flex justify-end">
+                  <ToastAction
+                    altText={updateToast.actionLabel}
+                    onClick={() => handleUpdateToastAction(updateToast.actionKind)}
+                  >
+                    {updateToast.actionLabel}
+                  </ToastAction>
+                </div>
+              )}
+            </div>
+            <ToastClose />
+          </Toast>
+        )}
+        <ToastViewport />
+      </ToastProvider>
     </div>
   );
 }

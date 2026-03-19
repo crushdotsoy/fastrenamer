@@ -29,6 +29,18 @@ const api: AdvancedRenamerApi = {
       ipcRenderer.off('window:stateChanged', handler);
     };
   },
+  getUpdateState: () => ipcRenderer.invoke('updates:getState'),
+  checkForUpdates: () => ipcRenderer.invoke('updates:check'),
+  quitAndInstallUpdate: () => ipcRenderer.invoke('updates:quitAndInstall'),
+  onUpdateStateChanged: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, state: Parameters<typeof listener>[0]) => {
+      listener(state);
+    };
+    ipcRenderer.on('update:stateChanged', handler);
+    return () => {
+      ipcRenderer.off('update:stateChanged', handler);
+    };
+  },
 };
 
 contextBridge.exposeInMainWorld('advancedRenamer', api);

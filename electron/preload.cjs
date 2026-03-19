@@ -26,4 +26,14 @@ contextBridge.exposeInMainWorld('advancedRenamer', {
       ipcRenderer.off('window:stateChanged', handler);
     };
   },
+  getUpdateState: () => ipcRenderer.invoke('updates:getState'),
+  checkForUpdates: () => ipcRenderer.invoke('updates:check'),
+  quitAndInstallUpdate: () => ipcRenderer.invoke('updates:quitAndInstall'),
+  onUpdateStateChanged: (listener) => {
+    const handler = (_event, state) => listener(state);
+    ipcRenderer.on('update:stateChanged', handler);
+    return () => {
+      ipcRenderer.off('update:stateChanged', handler);
+    };
+  },
 });

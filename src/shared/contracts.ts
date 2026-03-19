@@ -158,6 +158,35 @@ export interface WindowState {
   isMaximized: boolean;
 }
 
+export interface UpdateProgress {
+  bytesPerSecond: number;
+  percent: number;
+  transferred: number;
+  total: number;
+}
+
+export type UpdateStatus =
+  | 'idle'
+  | 'disabled'
+  | 'checking'
+  | 'available'
+  | 'downloading'
+  | 'downloaded'
+  | 'up-to-date'
+  | 'installing'
+  | 'error';
+
+export interface UpdateState {
+  status: UpdateStatus;
+  currentVersion: string;
+  availableVersion?: string;
+  releaseDate?: string;
+  releaseName?: string;
+  checkedAt?: string;
+  progress?: UpdateProgress;
+  message?: string;
+}
+
 export interface AdvancedRenamerApi {
   getDroppedPaths(files: File[]): string[];
   pickSources(request: PickSourcesRequest): Promise<SourceSelection[]>;
@@ -175,6 +204,10 @@ export interface AdvancedRenamerApi {
   closeWindow(): Promise<void>;
   getWindowState(): Promise<WindowState>;
   onWindowStateChanged(listener: (state: WindowState) => void): () => void;
+  getUpdateState(): Promise<UpdateState>;
+  checkForUpdates(): Promise<UpdateState>;
+  quitAndInstallUpdate(): Promise<boolean>;
+  onUpdateStateChanged(listener: (state: UpdateState) => void): () => void;
 }
 
 export type {
