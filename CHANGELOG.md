@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2 - 2026-03-19
+
+### Added
+
+- Automatic GitHub release update checks for packaged app builds
+- Background update downloads with in-app restart to install
+- Shadcn-style toast notifications for update availability and install readiness
+- Settings panel status for current version, latest version, check time, and download progress
+
 ## 0.1.0 - 2026-03-18
 
 Initial public release.
