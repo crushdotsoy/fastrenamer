@@ -87,6 +87,7 @@ import {
   type ThemeTokens,
   createCustomTheme,
 } from './themes';
+import { AVAILABLE_LOCALES, useI18n, type AppLocale } from './i18n';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -98,78 +99,107 @@ const DEFAULT_PREVIEW: PreviewResult = {
 const STATUS_OPTIONS = ['ok', 'conflict', 'invalid', 'unchanged'] as const;
 type StatusFilter = (typeof STATUS_OPTIONS)[number];
 
-const SOURCE_MODE_META: Record<
+const SOURCE_MODE_OPTIONS: SourceMode[] = [
+  'picked_folders',
+  'picked_files',
+  'top_level_folders',
+  'subfolders',
+  'top_level_files',
+  'files_recursive',
+];
+
+const RULE_TYPE_ORDER: RenameRule['type'][] = [
+  'new_name',
+  'find_replace',
+  'prefix_suffix',
+  'case_transform',
+  'trim_text',
+  'remove_text',
+  'sequence_insert',
+  'date_time',
+  'extension_handling',
+];
+
+function getSourceModeMeta(t: ReturnType<typeof useI18n>['t']): Record<
   SourceMode,
   { label: string; pickerLabel: string; detail: string; supportsFilter: boolean }
-> = {
-  picked_folders: {
-    label: 'Picked folders',
-    pickerLabel: 'Add Folders',
-    detail: 'Pick folders directly and rename those folders themselves.',
-    supportsFilter: false,
-  },
-  picked_files: {
-    label: 'Picked files',
-    pickerLabel: 'Add Files',
-    detail: 'Pick individual files directly.',
-    supportsFilter: true,
-  },
-  top_level_folders: {
-    label: 'Top-level folders',
-    pickerLabel: 'Add Folders',
-    detail: 'Rename direct child folders inside each selected root folder.',
-    supportsFilter: false,
-  },
-  subfolders: {
-    label: 'Subfolders',
-    pickerLabel: 'Add Folders',
-    detail: 'Rename nested folders below the top level.',
-    supportsFilter: false,
-  },
-  top_level_files: {
-    label: 'Top-level files',
-    pickerLabel: 'Add Folders',
-    detail: 'Rename direct child files inside each selected root folder.',
-    supportsFilter: true,
-  },
-  files_recursive: {
-    label: 'Files recursively',
-    pickerLabel: 'Add Folders',
-    detail: 'Rename files at any depth inside each selected root folder.',
-    supportsFilter: true,
-  },
-};
+> {
+  return {
+    picked_folders: {
+      label: t('source.mode.picked_folders.label'),
+      pickerLabel: t('source.mode.picked_folders.picker'),
+      detail: t('source.mode.picked_folders.detail'),
+      supportsFilter: false,
+    },
+    picked_files: {
+      label: t('source.mode.picked_files.label'),
+      pickerLabel: t('source.mode.picked_files.picker'),
+      detail: t('source.mode.picked_files.detail'),
+      supportsFilter: true,
+    },
+    top_level_folders: {
+      label: t('source.mode.top_level_folders.label'),
+      pickerLabel: t('source.mode.top_level_folders.picker'),
+      detail: t('source.mode.top_level_folders.detail'),
+      supportsFilter: false,
+    },
+    subfolders: {
+      label: t('source.mode.subfolders.label'),
+      pickerLabel: t('source.mode.subfolders.picker'),
+      detail: t('source.mode.subfolders.detail'),
+      supportsFilter: false,
+    },
+    top_level_files: {
+      label: t('source.mode.top_level_files.label'),
+      pickerLabel: t('source.mode.top_level_files.picker'),
+      detail: t('source.mode.top_level_files.detail'),
+      supportsFilter: true,
+    },
+    files_recursive: {
+      label: t('source.mode.files_recursive.label'),
+      pickerLabel: t('source.mode.files_recursive.picker'),
+      detail: t('source.mode.files_recursive.detail'),
+      supportsFilter: true,
+    },
+  };
+}
 
-const RULE_META: Record<
+function getRuleMeta(t: ReturnType<typeof useI18n>['t']): Record<
   RenameRule['type'],
   { label: string; color: string; icon: React.ComponentType<{ className?: string }> }
-> = {
-  new_name:           { label: 'New Name',        color: '#38bdf8', icon: Type },
-  find_replace:       { label: 'Find / Replace',  color: '#4e8fff', icon: Replace },
-  prefix_suffix:      { label: 'Prefix / Suffix',  color: '#a78bfa', icon: Braces },
-  case_transform:     { label: 'Case Transform',   color: '#34d399', icon: CaseSensitive },
-  trim_text:          { label: 'Trim / Normalize', color: '#2dd4bf', icon: Scissors },
-  remove_text:        { label: 'Remove Text',      color: '#f87171', icon: Eraser },
-  sequence_insert:    { label: 'Sequence',         color: '#fb923c', icon: Hash },
-  date_time:          { label: 'Date / Time',      color: '#fbbf24', icon: Calendar },
-  extension_handling: { label: 'Extension',        color: '#e879f9', icon: FileCode },
-};
+> {
+  return {
+    new_name: { label: t('rule.new_name'), color: '#38bdf8', icon: Type },
+    find_replace: { label: t('rule.find_replace'), color: '#4e8fff', icon: Replace },
+    prefix_suffix: { label: t('rule.prefix_suffix'), color: '#a78bfa', icon: Braces },
+    case_transform: { label: t('rule.case_transform'), color: '#34d399', icon: CaseSensitive },
+    trim_text: { label: t('rule.trim_text'), color: '#2dd4bf', icon: Scissors },
+    remove_text: { label: t('rule.remove_text'), color: '#f87171', icon: Eraser },
+    sequence_insert: { label: t('rule.sequence_insert'), color: '#fb923c', icon: Hash },
+    date_time: { label: t('rule.date_time'), color: '#fbbf24', icon: Calendar },
+    extension_handling: { label: t('rule.extension_handling'), color: '#e879f9', icon: FileCode },
+  };
+}
 
-const NEW_NAME_TOKENS = [
-  { label: 'Sequence', detail: '0001, 0002, 0003', value: '{seq_num:0001}' },
-  { label: 'Original Name', detail: 'Current file name', value: '{original_stem}' },
-  { label: 'Current Result', detail: 'Name after earlier rules', value: '{current_stem}' },
-  { label: 'Parent Folder', detail: 'Containing folder name', value: '{parent}' },
-  { label: 'Date', detail: 'YYYY-MM-DD', value: '{date}' },
-  { label: 'Time', detail: 'HHmmss', value: '{time}' },
-] as const;
+function getNewNameTokens(t: ReturnType<typeof useI18n>['t']) {
+  return [
+    { label: t('new_name.token.sequence.label'), detail: t('new_name.token.sequence.detail'), value: '{seq_num:0001}' },
+    { label: t('new_name.token.original.label'), detail: t('new_name.token.original.detail'), value: '{original_stem}' },
+    { label: t('new_name.token.current.label'), detail: t('new_name.token.current.detail'), value: '{current_stem}' },
+    { label: t('new_name.token.parent.label'), detail: t('new_name.token.parent.detail'), value: '{parent}' },
+    { label: t('new_name.token.date.label'), detail: t('new_name.token.date.detail'), value: '{date}' },
+    { label: t('new_name.token.time.label'), detail: t('new_name.token.time.detail'), value: '{time}' },
+  ] as const;
+}
 
-const NEW_NAME_STARTERS = [
-  { label: 'Simple sequence', value: 'name_{seq_num:0001}' },
-  { label: 'Keep original + number', value: '{original_stem}_{seq_num:0001}' },
-  { label: 'Folder + number', value: '{parent}_{seq_num:0001}' },
-  { label: 'Date + number', value: '{date}_{seq_num:0001}' },
-] as const;
+function getNewNameStarters(t: ReturnType<typeof useI18n>['t']) {
+  return [
+    { label: t('new_name.starter.simple'), value: 'name_{seq_num:0001}' },
+    { label: t('new_name.starter.original'), value: '{original_stem}_{seq_num:0001}' },
+    { label: t('new_name.starter.folder'), value: '{parent}_{seq_num:0001}' },
+    { label: t('new_name.starter.date'), value: '{date}_{seq_num:0001}' },
+  ] as const;
+}
 
 const SOURCE_LIST_COLLATOR = new Intl.Collator(undefined, {
   numeric: true,
@@ -476,61 +506,81 @@ function getUpdateTone(status: UpdateState['status']) {
   }
 }
 
-function getUpdateStatusLabel(status: UpdateState['status']) {
+function getUpdateStatusLabel(status: UpdateState['status'], t: ReturnType<typeof useI18n>['t']) {
   switch (status) {
     case 'idle':
-      return 'idle';
+      return t('updates.status.idle');
     case 'disabled':
-      return 'packaged builds only';
+      return t('updates.status.disabled');
     case 'checking':
-      return 'checking';
+      return t('updates.status.checking');
     case 'available':
-      return 'update found';
+      return t('updates.status.available');
     case 'downloading':
-      return 'downloading';
+      return t('updates.status.downloading');
     case 'downloaded':
-      return 'ready to install';
+      return t('updates.status.downloaded');
     case 'up-to-date':
-      return 'up to date';
+      return t('updates.status.up_to_date');
     case 'installing':
-      return 'installing';
+      return t('updates.status.installing');
     case 'error':
-      return 'update error';
+      return t('updates.status.error');
   }
 }
 
-function getUpdateSummary(state: UpdateState) {
+function getUpdateSummary(state: UpdateState, t: ReturnType<typeof useI18n>['t']) {
   switch (state.status) {
     case 'disabled':
-      return state.message ?? 'Install a packaged GitHub release to enable automatic updates.';
+      return state.message ?? t('updates.summary.disabled');
     case 'checking':
-      return 'Checking GitHub Releases for a newer version.';
+      return t('updates.summary.checking');
     case 'available':
       return state.manualDownloadOnly
-        ? state.message ?? `Version ${state.availableVersion ?? 'unknown'} is available to download from GitHub Releases.`
-        : `Version ${state.availableVersion ?? 'unknown'} is available and downloading in the background.`;
+        ? state.message ?? t('updates.summary.available_manual', { version: state.availableVersion ?? 'unknown' })
+        : t('updates.summary.available_auto', { version: state.availableVersion ?? 'unknown' });
     case 'downloading':
       return state.progress
-        ? `${state.progress.percent.toFixed(0)}% downloaded (${formatBytes(state.progress.transferred)} of ${formatBytes(state.progress.total)}).`
-        : 'Downloading the latest release in the background.';
+        ? t('updates.summary.downloading_with_progress', {
+            percent: state.progress.percent.toFixed(0),
+            transferred: formatBytes(state.progress.transferred),
+            total: formatBytes(state.progress.total),
+          })
+        : t('updates.summary.downloading');
     case 'downloaded':
-      return `Version ${state.availableVersion ?? 'unknown'} is ready. Restart the app to install it.`;
+      return t('updates.summary.downloaded', { version: state.availableVersion ?? 'unknown' });
     case 'up-to-date':
       return state.manualDownloadOnly
-        ? 'This installation matches the latest published release. Future macOS updates will open GitHub for a manual download.'
-        : 'This installation already matches the latest published release.';
+        ? t('updates.summary.up_to_date_manual')
+        : t('updates.summary.up_to_date');
     case 'installing':
-      return 'Closing the app to install the downloaded update.';
+      return t('updates.summary.installing');
     case 'error':
-      return state.message ?? 'The app could not complete the update check.';
+      return state.message ?? t('updates.summary.error');
     default:
       return state.manualDownloadOnly
-        ? state.message ?? 'This macOS build checks for updates, but installs must be downloaded manually from GitHub Releases.'
-        : 'Automatic updates are enabled for packaged releases.';
+        ? state.message ?? t('updates.summary.idle_manual')
+        : t('updates.summary.idle');
   }
 }
 
-type SettingsSectionId = 'updates' | 'executionProfile' | 'platformRules' | 'appearance';
+function getThemeDescription(theme: AppTheme, t: ReturnType<typeof useI18n>['t']) {
+  if (theme.kind === 'preset') {
+    return t(`theme.preset.${theme.id}.description`);
+  }
+
+  return theme.description;
+}
+
+function getThemeKindLabel(theme: AppTheme, active: boolean, t: ReturnType<typeof useI18n>['t']) {
+  if (active) {
+    return t('appearance.active');
+  }
+
+  return theme.kind === 'custom' ? t('appearance.custom') : t('appearance.preset');
+}
+
+type SettingsSectionId = 'updates' | 'executionProfile' | 'platformRules' | 'appearance' | 'language';
 
 function SettingsSection({
   title,
@@ -602,6 +652,7 @@ function ThemeOptionCard({
   onSelect: () => void;
   onDuplicate: () => void;
 }) {
+  const { t } = useI18n();
   const swatches = [
     theme.tokens.background,
     theme.tokens.card,
@@ -627,10 +678,10 @@ function ThemeOptionCard({
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-foreground">{theme.name}</p>
               <Badge tone={active ? 'accent' : 'default'}>
-                {active ? 'Active' : theme.kind === 'custom' ? 'Custom' : 'Preset'}
+                {getThemeKindLabel(theme, active, t)}
               </Badge>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">{theme.description}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{getThemeDescription(theme, t)}</p>
           </div>
           <span
             className="mt-0.5 h-3 w-3 shrink-0 rounded-full border border-border"
@@ -651,11 +702,11 @@ function ThemeOptionCard({
 
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
         <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-          {theme.baseThemeId}
+          {t(`appearance.base.${theme.baseThemeId}`)}
         </span>
         <Button size="sm" variant="ghost" onClick={onDuplicate}>
           <Copy className="h-3.5 w-3.5" />
-          Copy
+          {t('appearance.copy')}
         </Button>
       </div>
     </div>
@@ -673,6 +724,7 @@ function ThemeTokenEditor({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const { t } = useI18n();
   return (
     <label className="rounded-xl border border-border bg-card p-3">
       <div className="flex items-start justify-between gap-3">
@@ -701,7 +753,9 @@ function ThemeTokenEditor({
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export function App() {
+  const { locale, setLocale, t } = useI18n();
   const platform = useMemo(detectPlatform, []);
+  const sourceModeMeta = useMemo(() => getSourceModeMeta(t), [t]);
   const {
     theme,
     themes,
@@ -795,10 +849,10 @@ export function App() {
         const picked = await window.advancedRenamer.pickSources({ mode: nextPick.mode });
         setSources(sortSourceSelections(picked));
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to open the source picker.');
+        setError(err instanceof Error ? err.message : t('error.source_picker'));
       }
     })();
-  }, [addSourcesOpen, pendingSourcePick]);
+  }, [addSourcesOpen, pendingSourcePick, t]);
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
@@ -869,11 +923,11 @@ export function App() {
       if (state.status === 'available') {
         showUpdateToast({
           tone: 'accent',
-          title: 'Update found',
+          title: t('toast.update_found.title'),
           description: state.manualDownloadOnly
-            ? `Version ${state.availableVersion ?? 'unknown'} is available on GitHub Releases for manual download.`
-            : `Version ${state.availableVersion ?? 'unknown'} is downloading in the background.`,
-          actionLabel: state.manualDownloadOnly ? 'Download update' : 'Open settings',
+            ? t('toast.update_found.description_manual', { version: state.availableVersion ?? 'unknown' })
+            : t('toast.update_found.description_auto', { version: state.availableVersion ?? 'unknown' }),
+          actionLabel: state.manualDownloadOnly ? t('updates.download') : t('toast.open_settings'),
           actionKind: state.manualDownloadOnly ? 'download-update' : 'open-settings',
         });
       }
@@ -881,9 +935,9 @@ export function App() {
       if (state.status === 'downloaded') {
         showUpdateToast({
           tone: 'ok',
-          title: 'Update ready',
-          description: `Version ${state.availableVersion ?? 'unknown'} is ready to install.`,
-          actionLabel: 'Restart now',
+          title: t('toast.update_ready.title'),
+          description: t('toast.update_ready.description', { version: state.availableVersion ?? 'unknown' }),
+          actionLabel: t('toast.restart_now'),
           actionKind: 'install-update',
         });
       }
@@ -891,9 +945,9 @@ export function App() {
       if (state.status === 'error') {
         showUpdateToast({
           tone: 'conflict',
-          title: 'Update failed',
-          description: state.message ?? 'The app could not complete the update check.',
-          actionLabel: 'Open settings',
+          title: t('toast.update_failed.title'),
+          description: state.message ?? t('updates.summary.error'),
+          actionLabel: t('toast.open_settings'),
           actionKind: 'open-settings',
         });
       }
@@ -923,7 +977,7 @@ export function App() {
       mounted = false;
       unsubscribe();
     };
-  }, []);
+  }, [t]);
 
   async function reloadMetadata() {
     const [presetList, historyList] = await Promise.all([
@@ -1018,7 +1072,7 @@ export function App() {
             : pendingDroppedSources.filter((source) => source.isDirectory);
 
       if (nextSources.length === 0) {
-        setError('The dropped items do not match the selected source mode.');
+        setError(t('error.dropped_mode'));
         return;
       }
 
@@ -1040,7 +1094,7 @@ export function App() {
 
   function handleDraftSourceModeChange(nextMode: SourceMode) {
     setDraftSourceMode(nextMode);
-    if (!SOURCE_MODE_META[nextMode].supportsFilter) {
+    if (!sourceModeMeta[nextMode].supportsFilter) {
       setDraftFileNamePattern('');
     }
   }
@@ -1063,7 +1117,7 @@ export function App() {
           ? 'files_recursive'
           : availableModes[0];
         setDraftSourceMode(nextMode);
-        if (!SOURCE_MODE_META[nextMode].supportsFilter) {
+        if (!sourceModeMeta[nextMode].supportsFilter) {
           setDraftFileNamePattern('');
         }
       }
@@ -1086,7 +1140,7 @@ export function App() {
     );
 
     if (droppedPaths.length === 0) {
-      setError('Dropped items did not include filesystem paths.');
+      setError(t('error.dropped_paths'));
       return;
     }
 
@@ -1116,7 +1170,7 @@ export function App() {
       setDraftFileNamePattern('');
       setAddSourcesOpen(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to read dropped items.');
+      setError(err instanceof Error ? err.message : t('error.read_dropped'));
     }
   }
 
@@ -1128,7 +1182,7 @@ export function App() {
       const next = await window.advancedRenamer.generatePreview(previewRequest);
       startTransition(() => setPreview(next));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate preview.');
+      setError(err instanceof Error ? err.message : t('error.generate_preview'));
     } finally {
       setBusy('idle');
     }
@@ -1165,7 +1219,7 @@ export function App() {
   }
 
   async function savePreset() {
-    if (!presetName.trim()) { setError('Preset name is required.'); return; }
+    if (!presetName.trim()) { setError(t('error.preset_name_required')); return; }
     await window.advancedRenamer.savePreset({ id: selectedPresetId ?? undefined, name: presetName.trim(), rules });
     setPresetName('');
     setSelectedPresetId(null);
@@ -1184,15 +1238,15 @@ export function App() {
   });
   const availableDraftModes = pendingDroppedSources
     ? getAvailableSourceModes(pendingDroppedSources)
-    : (Object.keys(SOURCE_MODE_META) as SourceMode[]);
+    : SOURCE_MODE_OPTIONS;
   const sourceDialogItems = pendingDroppedSources ?? sources;
-  const sourceDialogTitle = pendingDroppedSources ? 'Use Dropped Items' : 'Add Sources';
+  const sourceDialogTitle = pendingDroppedSources ? t('sources.add.dropped_title') : t('sources.add.title');
   const sourceDialogDescription = pendingDroppedSources
-    ? 'Choose how Fast Renamer should interpret the dropped folders or files.'
-    : 'Choose what kind of items you want to rename before opening the file picker.';
+    ? t('sources.add.dropped_description')
+    : t('sources.add.description');
   const sourceDialogButtonLabel = pendingDroppedSources
-    ? 'Use Dropped Items'
-    : SOURCE_MODE_META[draftSourceMode].pickerLabel;
+    ? t('sources.add.dropped_title')
+    : sourceModeMeta[draftSourceMode].pickerLabel;
   const sourceDialogRootCount = pendingDroppedSources?.length ?? sources.length;
   const activeCustomTheme = theme.kind === 'custom' ? theme : null;
 
@@ -1237,11 +1291,12 @@ export function App() {
             themes={themes}
             windowState={windowState}
             sourceCount={sources.length}
-            selectedLabel={getSelectedLabel(sources)}
+            selectedLabel={getSelectedLabel(sources, t)}
             preview={preview}
             busy={busy}
             error={error}
             undoDisabled={!lastUndoable || busy !== 'idle'}
+            t={t}
             onOpenAddSources={openAddSources}
             onClearSources={clearSources}
             onRefresh={refreshPreview}
@@ -1317,10 +1372,8 @@ export function App() {
       {dragActive && (
         <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center bg-accent/10 backdrop-blur-[2px]">
           <div className="rounded-2xl border border-accent/40 bg-card/95 px-8 py-6 text-center shadow-2xl">
-            <div className="text-sm font-semibold text-foreground">Drop files or folders to add sources</div>
-            <div className="mt-2 text-xs text-muted-foreground">
-              Fast Renamer will use the dropped items as the current source roots.
-            </div>
+            <div className="text-sm font-semibold text-foreground">{t('app.drop.title')}</div>
+            <div className="mt-2 text-xs text-muted-foreground">{t('app.drop.description')}</div>
           </div>
         </div>
       )}
@@ -1340,62 +1393,60 @@ export function App() {
           <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <div className="space-y-2">
               <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Source Set
+                {t('sources.set')}
               </label>
               <Select
                 value={draftSourceMode}
                 onChange={(e) => handleDraftSourceModeChange(e.target.value as SourceMode)}
               >
                 {availableDraftModes.includes('picked_folders') && (
-                  <option value="picked_folders">Picked folders</option>
+                  <option value="picked_folders">{sourceModeMeta.picked_folders.label}</option>
                 )}
                 {availableDraftModes.includes('picked_files') && (
-                  <option value="picked_files">Picked files</option>
+                  <option value="picked_files">{sourceModeMeta.picked_files.label}</option>
                 )}
                 {availableDraftModes.includes('top_level_folders') && (
-                  <option value="top_level_folders">Top-level folders</option>
+                  <option value="top_level_folders">{sourceModeMeta.top_level_folders.label}</option>
                 )}
                 {availableDraftModes.includes('subfolders') && (
-                  <option value="subfolders">Subfolders</option>
+                  <option value="subfolders">{sourceModeMeta.subfolders.label}</option>
                 )}
                 {availableDraftModes.includes('top_level_files') && (
-                  <option value="top_level_files">Top-level files</option>
+                  <option value="top_level_files">{sourceModeMeta.top_level_files.label}</option>
                 )}
                 {availableDraftModes.includes('files_recursive') && (
-                  <option value="files_recursive">Files recursively</option>
+                  <option value="files_recursive">{sourceModeMeta.files_recursive.label}</option>
                 )}
               </Select>
-              <p className="text-xs text-muted-foreground">
-                {SOURCE_MODE_META[draftSourceMode].detail}
-              </p>
+              <p className="text-xs text-muted-foreground">{sourceModeMeta[draftSourceMode].detail}</p>
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                File Filter
+                {t('sources.filter')}
               </label>
               <Input
                 value={draftFileNamePattern}
                 onChange={(e) => setDraftFileNamePattern(e.target.value)}
-                placeholder="*.tif, *.tiff"
-                disabled={!SOURCE_MODE_META[draftSourceMode].supportsFilter}
+                placeholder={t('sources.filter.placeholder')}
+                disabled={!sourceModeMeta[draftSourceMode].supportsFilter}
               />
               <p className="text-xs text-muted-foreground">
-                {SOURCE_MODE_META[draftSourceMode].supportsFilter
-                  ? 'Optional glob filters. Supports * and ?, separated by commas.'
-                  : 'Filters are only used when the source set targets files.'}
+                {sourceModeMeta[draftSourceMode].supportsFilter
+                  ? t('sources.filter.help_supported')
+                  : t('sources.filter.help_unsupported')}
               </p>
             </div>
           </div>
 
           <div className="rounded-xl border border-border bg-surface p-4">
             <p className="text-sm font-semibold text-foreground">
-              {pendingDroppedSources ? 'Dropped items' : 'Current source set'}
+              {pendingDroppedSources ? t('sources.dropped') : t('sources.current')}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Badge dot tone="accent">{SOURCE_MODE_META[draftSourceMode].label}</Badge>
+              <Badge dot tone="accent">{sourceModeMeta[draftSourceMode].label}</Badge>
               {draftFileNamePattern ? <Badge dot>{draftFileNamePattern}</Badge> : null}
-              <Badge dot>{sourceDialogRootCount} picked roots</Badge>
+              <Badge dot>{t('sources.roots', { count: sourceDialogRootCount })}</Badge>
             </div>
             {sourceDialogItems.length > 0 && (
               <div className="mt-3 max-h-40 space-y-2 overflow-y-auto">
@@ -1410,12 +1461,12 @@ export function App() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge tone={source.isDirectory ? 'accent' : 'default'}>
-                        {source.isDirectory ? 'folder' : 'file'}
+                        {source.isDirectory ? t('sources.folder') : t('sources.file')}
                       </Badge>
                       <IconButton
                         className="h-7 w-7"
                         onClick={() => removeSourceFromDialog(source.path)}
-                        aria-label={`Remove ${source.name}`}
+                        aria-label={t('sources.remove', { name: source.name })}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </IconButton>
@@ -1428,7 +1479,7 @@ export function App() {
 
           <div className="flex flex-wrap justify-end gap-2">
             <Button variant="ghost" onClick={() => setAddSourcesOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={() => void chooseSourcesFromDialog()}>
               <FileInput className="h-3.5 w-3.5" />
@@ -1442,26 +1493,26 @@ export function App() {
       <Drawer
         open={presetDrawerOpen}
         onOpenChange={setPresetDrawerOpen}
-        title="Presets"
-        description="Sample stacks for discoverability plus reusable user presets."
+        title={t('presets.title')}
+        description={t('presets.description')}
       >
         <div className="space-y-6 p-5">
           <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="text-sm font-semibold text-foreground">Save Current Stack</p>
+            <p className="text-sm font-semibold text-foreground">{t('presets.save_stack')}</p>
             <div className="mt-3 space-y-3">
               <Input
                 value={presetName}
                 onChange={(e) => setPresetName(e.target.value)}
-                placeholder="My awesome preset…"
+                placeholder={t('presets.name.placeholder')}
               />
               <div className="flex gap-2">
                 <Button onClick={() => void savePreset()}>
                   <Save className="h-3.5 w-3.5" />
-                  Save preset
+                  {t('presets.save')}
                 </Button>
                 {selectedPresetId && (
                   <Button variant="secondary" onClick={() => setSelectedPresetId(null)}>
-                    Clear target
+                    {t('presets.clear_target')}
                   </Button>
                 )}
               </div>
@@ -1470,12 +1521,12 @@ export function App() {
 
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-foreground">Preset Library</p>
+              <p className="text-sm font-semibold text-foreground">{t('presets.library')}</p>
               <div className="w-full sm:w-64">
                 <Input
                   value={presetSearch}
                   onChange={(e) => setPresetSearch(e.target.value)}
-                  placeholder="Search presets"
+                  placeholder={t('presets.search.placeholder')}
                 />
               </div>
             </div>
@@ -1490,7 +1541,7 @@ export function App() {
                 setSelectedPresetId(p.id);
               }}
               onDelete={(p) => void window.advancedRenamer.deletePreset(p.id).then(reloadMetadata)}
-              emptyMessage={presetSearch.trim() ? 'No presets match your search.' : 'No presets yet.'}
+              emptyMessage={presetSearch.trim() ? t('presets.empty_search') : t('presets.empty')}
             />
           </div>
         </div>
@@ -1500,18 +1551,18 @@ export function App() {
       <Drawer
         open={historyDrawerOpen}
         onOpenChange={setHistoryDrawerOpen}
-        title="Rename History"
-        description="Completed batches stored for auditability and one-click undo."
+        title={t('history.title')}
+        description={t('history.description')}
       >
         <div className="space-y-3 p-5">
-          {history.length === 0 && <EmptyState message="No rename batches recorded yet." />}
+          {history.length === 0 && <EmptyState message={t('history.empty')} />}
           {history.map((entry) => (
             <div key={entry.id} className="rounded-xl border border-border bg-surface p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Batch #{entry.id}</p>
+                  <p className="text-sm font-semibold text-foreground">{t('history.batch', { id: entry.id })}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {new Date(entry.createdAt).toLocaleString()}
+                    {new Date(entry.createdAt).toLocaleString(locale)}
                   </p>
                 </div>
                 <Badge
@@ -1524,20 +1575,18 @@ export function App() {
                   }
                   dot
                 >
-                  {getUndoStatusLabel(entry)}
+                  {getUndoStatusLabel(entry, t)}
                 </Badge>
               </div>
               <div className="mt-3 flex gap-4 text-xs text-muted-foreground">
-                <span>{entry.renamedCount} renamed</span>
-                <span>{entry.previewSummary.conflict + entry.previewSummary.invalid} blocked</span>
+                <span>{t('history.renamed', { count: entry.renamedCount })}</span>
+                <span>{t('history.blocked', { count: entry.previewSummary.conflict + entry.previewSummary.invalid })}</span>
               </div>
               {entry.undoReason && entry.undoState !== 'ready' && entry.undoState !== 'archived' && (
                 <p className="mt-3 text-xs text-conflict">{entry.undoReason}</p>
               )}
               {entry.rules.length === 0 && (
-                <p className="mt-3 text-xs text-muted-foreground">
-                  This batch does not have a reusable template saved.
-                </p>
+                <p className="mt-3 text-xs text-muted-foreground">{t('history.no_template')}</p>
               )}
               <div className="mt-3 flex gap-2">
                 <Button
@@ -1546,7 +1595,7 @@ export function App() {
                   disabled={entry.rules.length === 0}
                   onClick={() => setRules(entry.rules)}
                 >
-                  Reuse template
+                  {t('history.reuse')}
                 </Button>
                 <Button
                   size="sm"
@@ -1554,7 +1603,7 @@ export function App() {
                   onClick={() => void undoLast(entry.id)}
                 >
                   <Undo2 className="h-3.5 w-3.5" />
-                  Undo
+                  {t('history.undo')}
                 </Button>
               </div>
             </div>
@@ -1566,30 +1615,30 @@ export function App() {
       <Drawer
         open={settingsDrawerOpen}
         onOpenChange={setSettingsDrawerOpen}
-        title="Settings"
-        description="Local preferences plus GitHub release updates."
+        title={t('settings.title')}
+        description={t('settings.description')}
       >
         <div className="space-y-3 p-5">
           <SettingsSection
-            title="App Updates"
+            title={t('settings.updates')}
             badge={(
               <Badge tone={getUpdateTone(updateState.status)} dot>
-                {getUpdateStatusLabel(updateState.status)}
+                {getUpdateStatusLabel(updateState.status, t)}
               </Badge>
             )}
             open={openSettingsSection === 'updates'}
             onToggle={() => toggleSettingsSection('updates')}
           >
-            <p className="text-xs text-muted-foreground">{getUpdateSummary(updateState)}</p>
+            <p className="text-xs text-muted-foreground">{getUpdateSummary(updateState, t)}</p>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              <Badge>current {updateState.currentVersion}</Badge>
+              <Badge>{t('updates.current', { version: updateState.currentVersion })}</Badge>
               {updateState.availableVersion && updateState.availableVersion !== updateState.currentVersion && (
-                <Badge tone="accent">latest {updateState.availableVersion}</Badge>
+                <Badge tone="accent">{t('updates.latest', { version: updateState.availableVersion })}</Badge>
               )}
               {updateState.checkedAt && (
                 <Badge tone="unchanged">
-                  checked {new Date(updateState.checkedAt).toLocaleString()}
+                  {t('updates.checked', { date: new Date(updateState.checkedAt).toLocaleString(locale) })}
                 </Badge>
               )}
             </div>
@@ -1603,7 +1652,10 @@ export function App() {
                   />
                 </div>
                 <p className="mt-2 text-[11px] text-muted-foreground">
-                  {updateState.progress.percent.toFixed(0)}% at {formatBytes(updateState.progress.bytesPerSecond)}/s
+                  {t('updates.speed', {
+                    percent: updateState.progress.percent.toFixed(0),
+                    speed: formatBytes(updateState.progress.bytesPerSecond),
+                  })}
                 </p>
               </div>
             )}
@@ -1616,7 +1668,7 @@ export function App() {
                 onClick={() => void checkForUpdates()}
               >
                 <RefreshCcw className={cn('h-3.5 w-3.5', updateAction === 'checking' && 'animate-spin')} />
-                Check now
+                {t('updates.check_now')}
               </Button>
               <Button
                 size="sm"
@@ -1632,12 +1684,32 @@ export function App() {
                 ) : (
                   <Download className="h-3.5 w-3.5" />
                 )}
-                {updateState.manualDownloadOnly ? 'Download update' : 'Restart to install'}
+                {updateState.manualDownloadOnly ? t('updates.download') : t('updates.restart_install')}
               </Button>
             </div>
           </SettingsSection>
           <SettingsSection
-            title="Appearance"
+            title={t('settings.language')}
+            badge={<Badge tone="accent">{AVAILABLE_LOCALES.find((option) => option.code === locale)?.nativeLabel ?? locale}</Badge>}
+            open={openSettingsSection === 'language'}
+            onToggle={() => toggleSettingsSection('language')}
+          >
+            <div className="rounded-xl border border-border bg-card p-3">
+              <label className="space-y-2">
+                <span className="text-xs text-muted-foreground">{t('locale.label')}</span>
+                <Select value={locale} onChange={(event) => setLocale(event.target.value as AppLocale)}>
+                  {AVAILABLE_LOCALES.map((option) => (
+                    <option key={option.code} value={option.code}>
+                      {option.nativeLabel}
+                    </option>
+                  ))}
+                </Select>
+                <p className="text-xs text-muted-foreground">{t('locale.helper')}</p>
+              </label>
+            </div>
+          </SettingsSection>
+          <SettingsSection
+            title={t('settings.appearance')}
             badge={<Badge tone="accent">{theme.name}</Badge>}
             open={openSettingsSection === 'appearance'}
             onToggle={() => toggleSettingsSection('appearance')}
@@ -1645,19 +1717,19 @@ export function App() {
             <div className="space-y-4">
               <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-border bg-card p-3">
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Theme library</p>
+                  <p className="text-sm font-semibold text-foreground">{t('updates.theme_library')}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Pick any preset, then clone it when you want to make your own palette.
+                    {t('updates.theme_library_help')}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="secondary" onClick={cycleTheme}>
                     <Palette className="h-3.5 w-3.5" />
-                    Cycle
+                    {t('appearance.cycle')}
                   </Button>
                   <Button size="sm" onClick={createThemeFromActive}>
                     <Plus className="h-3.5 w-3.5" />
-                    New Custom from Current
+                    {t('appearance.new_custom')}
                   </Button>
                 </div>
               </div>
@@ -1678,10 +1750,8 @@ export function App() {
                 <div className="space-y-4 rounded-xl border border-border bg-surface/60 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-foreground">Edit Custom Theme</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Changes save instantly and apply across the app.
-                      </p>
+                      <p className="text-sm font-semibold text-foreground">{t('appearance.edit_custom')}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{t('appearance.edit_help')}</p>
                     </div>
                     <Button
                       size="sm"
@@ -1689,22 +1759,22 @@ export function App() {
                       onClick={() => deleteCustomTheme(activeCustomTheme.id)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                      Delete Custom Theme
+                      {t('appearance.delete_custom')}
                     </Button>
                   </div>
 
                   <label className="space-y-2">
-                    <span className="text-xs text-muted-foreground">Theme name</span>
+                    <span className="text-xs text-muted-foreground">{t('appearance.theme_name')}</span>
                     <Input
                       value={activeCustomTheme.name}
                       onChange={(event) => renameCustomTheme(activeCustomTheme.id, event.target.value)}
                       onBlur={(event) => {
-                        const nextName = event.target.value.trim() || 'Custom Theme';
+                        const nextName = event.target.value.trim() || t('appearance.theme_name_placeholder');
                         if (nextName !== activeCustomTheme.name) {
                           renameCustomTheme(activeCustomTheme.id, nextName);
                         }
                       }}
-                      placeholder="Custom Theme"
+                      placeholder={t('appearance.theme_name_placeholder')}
                     />
                   </label>
 
@@ -1712,8 +1782,8 @@ export function App() {
                     {THEME_TOKEN_FIELDS.map((field) => (
                       <ThemeTokenEditor
                         key={field.key}
-                        label={field.label}
-                        description={field.description}
+                        label={t(`theme.token.${field.key}.label`)}
+                        description={t(`theme.token.${field.key}.description`)}
                         value={activeCustomTheme.tokens[field.key]}
                         onChange={(value) => updateCustomThemeToken(activeCustomTheme.id, field.key, value)}
                       />
@@ -1722,34 +1792,25 @@ export function App() {
                 </div>
               ) : (
                 <div className="rounded-xl border border-dashed border-border bg-card/70 p-4">
-                  <p className="text-sm font-semibold text-foreground">Custom theme editor</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Presets are read-only. Create a custom theme from the current selection to edit every token.
-                  </p>
+                  <p className="text-sm font-semibold text-foreground">{t('appearance.editor_title')}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{t('appearance.editor_help')}</p>
                 </div>
               )}
             </div>
           </SettingsSection>
           <SettingsSection
-            title="Platform Rules"
+            title={t('settings.platform_rules')}
             open={openSettingsSection === 'platformRules'}
             onToggle={() => toggleSettingsSection('platformRules')}
           >
-            <p className="text-xs text-muted-foreground">
-              Preview validation uses{' '}
-              <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">{platform}</code>{' '}
-              filename rules so conflicts and invalid names reflect the current machine.
-            </p>
+            <p className="text-xs text-muted-foreground">{t('platform_rules.description', { platform })}</p>
           </SettingsSection>
           <SettingsSection
-            title="Execution Profile"
+            title={t('settings.execution_profile')}
             open={openSettingsSection === 'executionProfile'}
             onToggle={() => toggleSettingsSection('executionProfile')}
           >
-            <p className="text-xs text-muted-foreground">
-              Renderer runs sandboxed with a preload bridge. Filesystem writes only happen
-              through validated batch execution and undo in the Electron main process.
-            </p>
+            <p className="text-xs text-muted-foreground">{t('execution_profile.description')}</p>
           </SettingsSection>
         </div>
       </Drawer>
@@ -1824,6 +1885,7 @@ function TopBar({
   busy,
   error,
   undoDisabled,
+  t,
   onOpenAddSources,
   onClearSources,
   onRefresh,
@@ -1847,6 +1909,7 @@ function TopBar({
   busy: 'idle' | 'preview' | 'execute' | 'undo';
   error: string | null;
   undoDisabled: boolean;
+  t: ReturnType<typeof useI18n>['t'];
   onOpenAddSources: () => void;
   onClearSources: () => void;
   onRefresh: () => void;
@@ -1877,7 +1940,7 @@ function TopBar({
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Fast Renamer
             </p>
-            <p className="text-[10px] text-muted-foreground/50 hidden sm:block">v1 · batch rename</p>
+            <p className="text-[10px] text-muted-foreground/50 hidden sm:block">{t('topbar.tagline')}</p>
           </div>
         </div>
 
@@ -1888,7 +1951,7 @@ function TopBar({
         <div className="app-no-drag flex flex-wrap items-center gap-2">
           <Button variant="default" size="sm" onClick={onOpenAddSources}>
             <FileInput className="h-3.5 w-3.5" />
-            Add
+            {t('topbar.add')}
           </Button>
           <Button
             variant="ghost"
@@ -1898,19 +1961,19 @@ function TopBar({
             disabled={sourceCount === 0}
           >
             <Trash2 className="h-3.5 w-3.5" />
-            Clear
+            {t('topbar.clear')}
           </Button>
           <Button variant="ghost" size="sm" className={topBarGhostButtonClassName} onClick={onOpenPresets}>
             <Save className="h-3.5 w-3.5" />
-            Presets
+            {t('topbar.presets')}
           </Button>
           <Button variant="ghost" size="sm" className={topBarGhostButtonClassName} onClick={onOpenHistory}>
             <Clock3 className="h-3.5 w-3.5" />
-            History
+            {t('topbar.history')}
           </Button>
           <Button variant="ghost" size="sm" className={topBarGhostButtonClassName} onClick={onOpenSettings}>
             <Settings2 className="h-3.5 w-3.5" />
-            Settings
+            {t('topbar.settings')}
           </Button>
         </div>
 
@@ -1919,11 +1982,11 @@ function TopBar({
 
         {/* Action buttons */}
         <div className="app-no-drag flex items-center gap-1.5">
-          <Tooltip content="Refresh preview">
+          <Tooltip content={t('topbar.refresh_preview')}>
             <IconButton
               disabled={busy !== 'idle' || sourceCount === 0}
               onClick={onRefresh}
-              aria-label="Refresh preview"
+              aria-label={t('topbar.refresh_preview')}
             >
               <RefreshCcw
                 className={cn('h-4 w-4', busy === 'preview' && 'animate-spin')}
@@ -1931,8 +1994,8 @@ function TopBar({
             </IconButton>
           </Tooltip>
 
-          <Tooltip content="Undo last rename">
-            <IconButton disabled={undoDisabled} onClick={onUndo} aria-label="Undo">
+          <Tooltip content={t('topbar.undo_last')}>
+            <IconButton disabled={undoDisabled} onClick={onUndo} aria-label={t('history.undo')}>
               <Undo2 className={cn('h-4 w-4', busy === 'undo' && 'animate-spin')} />
             </IconButton>
           </Tooltip>
@@ -1946,7 +2009,7 @@ function TopBar({
             }
             onClick={onExecute}
           >
-            Rename
+            {t('topbar.rename')}
             {preview.summary.changed > 0 && (
               <span className="ml-0.5 rounded bg-accent-foreground/20 px-1.5 py-0.5 font-mono text-[10px] font-bold tabular-nums">
                 {preview.summary.changed}
@@ -1958,12 +2021,12 @@ function TopBar({
 
           <DropdownMenuRoot>
             <DropdownMenuTrigger asChild>
-              <IconButton aria-label={`Choose theme. Current theme: ${theme.name}`}>
+              <IconButton aria-label={t('topbar.choose_theme_aria', { themeName: theme.name })}>
                 <Palette className="h-4 w-4" />
               </IconButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-56">
-              <DropdownMenuLabel>Themes</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('topbar.themes')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {themes.map((candidate) => (
                 <DropdownMenuItem key={candidate.id} onClick={() => onSelectTheme(candidate.id)}>
@@ -1974,7 +2037,7 @@ function TopBar({
                   <div className="min-w-0 flex-1">
                     <div className="font-medium">{candidate.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {candidate.kind === 'custom' ? 'Custom' : 'Preset'}
+                      {candidate.kind === 'custom' ? t('topbar.theme_custom') : t('topbar.theme_preset')}
                     </div>
                   </div>
                   {candidate.id === theme.id && <CheckCircle2 className="h-4 w-4 text-accent" />}
@@ -1988,20 +2051,20 @@ function TopBar({
               <div className="h-6 w-px bg-border mx-0.5" />
 
               <div className="flex items-center gap-1">
-                <Tooltip content="Minimize">
+                <Tooltip content={t('topbar.minimize')}>
                   <IconButton
                     className="h-8 w-8 rounded-lg hover:bg-surface-elevated"
                     onClick={onMinimizeWindow}
-                    aria-label="Minimize window"
+                    aria-label={t('topbar.minimize_window')}
                   >
                     <Minus className="h-4 w-4" />
                   </IconButton>
                 </Tooltip>
-                <Tooltip content={windowState.isMaximized ? 'Restore down' : 'Maximize'}>
+                <Tooltip content={windowState.isMaximized ? t('topbar.restore_down') : t('topbar.maximize')}>
                   <IconButton
                     className="h-8 w-8 rounded-lg hover:bg-surface-elevated"
                     onClick={onToggleMaximizeWindow}
-                    aria-label={windowState.isMaximized ? 'Restore window' : 'Maximize window'}
+                    aria-label={windowState.isMaximized ? t('topbar.restore_window') : t('topbar.maximize_window')}
                   >
                     {windowState.isMaximized ? (
                       <Copy className="h-3.5 w-3.5" />
@@ -2010,11 +2073,11 @@ function TopBar({
                     )}
                   </IconButton>
                 </Tooltip>
-                <Tooltip content="Close">
+                <Tooltip content={t('topbar.close')}>
                   <IconButton
                     className="h-8 w-8 rounded-lg hover:bg-destructive/90 hover:text-white"
                     onClick={onCloseWindow}
-                    aria-label="Close window"
+                    aria-label={t('topbar.close_window')}
                   >
                     <X className="h-4 w-4" />
                   </IconButton>
@@ -2027,16 +2090,16 @@ function TopBar({
 
       {/* Status bar */}
       <div className="app-no-drag flex flex-wrap items-center gap-2 border-t border-border bg-surface/40 px-4 py-2 sm:px-5">
-        <Badge dot tone="ok">{preview.summary.ok} ok</Badge>
-        <Badge dot tone="conflict">{preview.summary.conflict} conflicts</Badge>
-        <Badge dot tone="invalid">{preview.summary.invalid} invalid</Badge>
-        <Badge dot tone="unchanged">{preview.summary.unchanged} unchanged</Badge>
+        <Badge dot tone="ok">{t('topbar.status.ok', { count: preview.summary.ok })}</Badge>
+        <Badge dot tone="conflict">{t('topbar.status.conflicts', { count: preview.summary.conflict })}</Badge>
+        <Badge dot tone="invalid">{t('topbar.status.invalid', { count: preview.summary.invalid })}</Badge>
+        <Badge dot tone="unchanged">{t('topbar.status.unchanged', { count: preview.summary.unchanged })}</Badge>
         <Badge dot>{selectedLabel}</Badge>
 
         {busy !== 'idle' && (
           <span className="flex items-center gap-1.5 text-xs text-accent">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-            {busy === 'preview' ? 'Generating preview…' : busy === 'execute' ? 'Renaming…' : 'Undoing…'}
+            {busy === 'preview' ? t('topbar.busy.preview') : busy === 'execute' ? t('topbar.busy.execute') : t('topbar.busy.undo')}
           </span>
         )}
 
@@ -2061,6 +2124,7 @@ function PreviewPanel({
   statusFilters: StatusFilter[];
   onToggleFilter: (s: StatusFilter) => void;
 }) {
+  const { t } = useI18n();
   const statusCounts: Record<StatusFilter, number> = {
     ok: preview.summary.ok,
     conflict: preview.summary.conflict,
@@ -2071,8 +2135,8 @@ function PreviewPanel({
   return (
     <Panel className="h-full">
       <PanelHeader
-        title="Preview"
-        detail="Live diff with filesystem safety checks."
+        title={t('preview.title')}
+        detail={t('preview.detail')}
         actions={
           <div className="flex flex-wrap gap-1.5">
             {STATUS_OPTIONS.filter((status) => statusCounts[status] > 0).map((status) => {
@@ -2104,14 +2168,14 @@ function PreviewPanel({
 
       {preview.rows.length === 0 ? (
         <div className="p-4">
-          <EmptyState message="Preview appears here after you select sources and configure rules." />
+          <EmptyState message={t('preview.empty')} />
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-auto">
           <table className="min-w-[700px] border-collapse text-left text-sm xl:min-w-full">
             <thead className="sticky top-0 z-10 border-b border-border bg-card">
               <tr>
-                {['Status', 'Original', 'Proposed', 'Notes'].map((col) => (
+                {[t('preview.column.status'), t('preview.column.original'), t('preview.column.proposed'), t('preview.column.notes')].map((col) => (
                   <th
                     key={col}
                     className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
@@ -2148,8 +2212,8 @@ function PreviewPanel({
                     {row.reasons.length > 0
                       ? row.reasons.join(' ')
                       : row.changed
-                        ? 'Ready to rename'
-                        : 'No change'}
+                        ? t('preview.ready')
+                        : t('preview.no_change')}
                   </td>
                 </tr>
               ))}
@@ -2178,31 +2242,29 @@ function RulesPanel({
   onReorderRule: (draggedRuleId: string, targetRuleId: string) => void;
   onDeleteRule: (id: string) => void;
 }) {
-  const RULE_TYPES: RenameRule['type'][] = [
-    'new_name', 'find_replace', 'prefix_suffix', 'case_transform', 'trim_text',
-    'remove_text', 'sequence_insert', 'date_time', 'extension_handling',
-  ];
+  const { t } = useI18n();
+  const ruleMeta = useMemo(() => getRuleMeta(t), [t]);
   const [draggedRuleId, setDraggedRuleId] = useState<string | null>(null);
   const [dropTargetRuleId, setDropTargetRuleId] = useState<string | null>(null);
 
   return (
     <Panel className="h-full">
       <PanelHeader
-        title="Rule Stack"
-        detail="Transforms applied top to bottom."
+        title={t('rules.title')}
+        detail={t('rules.detail')}
         actions={
           <DropdownMenuRoot>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="sm">
                 <Plus className="h-3.5 w-3.5" />
-                Add Rule
+                {t('rules.add')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Rule type</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('rules.type')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {RULE_TYPES.map((type) => {
-                const meta = RULE_META[type];
+              {RULE_TYPE_ORDER.map((type) => {
+                const meta = ruleMeta[type];
                 const Icon = meta.icon;
                 return (
                   <DropdownMenuItem key={type} onClick={() => onAddRule(type)}>
@@ -2223,7 +2285,7 @@ function RulesPanel({
 
       <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto p-4">
         {rules.length === 0 && (
-          <EmptyState message="No rules yet. Add one with the button above." />
+          <EmptyState message={t('rules.empty')} />
         )}
         {rules.map((rule, index) => (
           <RuleCard
@@ -2287,7 +2349,8 @@ function RuleCard({
   onDrop: () => void;
   onDelete: () => void;
 }) {
-  const meta = RULE_META[rule.type];
+  const { t } = useI18n();
+  const meta = getRuleMeta(t)[rule.type];
   const Icon = meta.icon;
 
   return (
@@ -2318,7 +2381,7 @@ function RuleCard({
           <button
             type="button"
             className="inline-flex h-7 w-7 cursor-grab items-center justify-center rounded-md text-muted-foreground hover:bg-surface-elevated hover:text-foreground active:cursor-grabbing"
-            aria-label="Drag to reorder rule"
+            aria-label={t('rules.drag')}
           >
             <GripVertical className="h-3.5 w-3.5" />
           </button>
@@ -2330,7 +2393,7 @@ function RuleCard({
           </span>
           <div>
             <p className="text-sm font-semibold text-foreground leading-none">{meta.label}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Step {index + 1}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{t('rules.step', { count: index + 1 })}</p>
           </div>
         </div>
 
@@ -2339,17 +2402,17 @@ function RuleCard({
             checked={rule.enabled}
             onCheckedChange={(checked) => onUpdate((r) => ({ ...r, enabled: checked }))}
           />
-          <Tooltip content="Move up">
+          <Tooltip content={t('rules.move_up')}>
             <IconButton className="h-7 w-7" onClick={() => onMove('up')}>
               <ChevronUp className="h-3.5 w-3.5" />
             </IconButton>
           </Tooltip>
-          <Tooltip content="Move down">
+          <Tooltip content={t('rules.move_down')}>
             <IconButton className="h-7 w-7" onClick={() => onMove('down')}>
               <ChevronDown className="h-3.5 w-3.5" />
             </IconButton>
           </Tooltip>
-          <Tooltip content="Delete rule">
+          <Tooltip content={t('rules.delete')}>
             <IconButton
               className="h-7 w-7 text-destructive hover:bg-destructive/10"
               onClick={onDelete}
@@ -2375,6 +2438,9 @@ function NewNameRuleEditor({
   rule: Extract<RenameRule, { type: 'new_name' }>;
   onChange: (rule: Extract<RenameRule, { type: 'new_name' }>) => void;
 }) {
+  const { t } = useI18n();
+  const tokens = useMemo(() => getNewNameTokens(t), [t]);
+  const starters = useMemo(() => getNewNameStarters(t), [t]);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   function insertToken(token: string) {
@@ -2403,7 +2469,7 @@ function NewNameRuleEditor({
           ref={inputRef}
           value={rule.template}
           onChange={(e) => onChange({ ...rule, template: e.target.value })}
-          placeholder="name_{seq_num:0001}"
+          placeholder={t('editor.new_name.placeholder')}
           className={cn(
             'h-9 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground outline-none',
             'placeholder:text-muted-foreground transition-colors',
@@ -2411,16 +2477,16 @@ function NewNameRuleEditor({
           )}
         />
         <p className="text-xs text-muted-foreground">
-          Click a token to insert it where your cursor is. Extensions stay unchanged unless you add an Extension rule.
+          {t('editor.new_name.help')}
         </p>
       </div>
 
       <div className="space-y-2">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Quick Insert
+          {t('editor.new_name.quick_insert')}
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
-          {NEW_NAME_TOKENS.map((token) => (
+          {tokens.map((token) => (
             <button
               key={token.value}
               type="button"
@@ -2440,10 +2506,10 @@ function NewNameRuleEditor({
 
       <div className="space-y-2">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Starter Templates
+          {t('editor.new_name.starters')}
         </p>
         <div className="flex flex-wrap gap-2">
-          {NEW_NAME_STARTERS.map((template) => (
+          {starters.map((template) => (
             <Button
               key={template.value}
               type="button"
@@ -2461,6 +2527,7 @@ function NewNameRuleEditor({
 }
 
 function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: RenameRule) => void }) {
+  const { t } = useI18n();
   switch (rule.type) {
     case 'new_name':
       return <NewNameRuleEditor rule={rule} onChange={onChange} />;
@@ -2472,29 +2539,29 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
             <Input
               value={rule.find}
               onChange={(e) => onChange({ ...rule, find: e.target.value })}
-              placeholder="Find…"
+              placeholder={t('editor.find.placeholder')}
             />
             <Input
               value={rule.replace}
               onChange={(e) => onChange({ ...rule, replace: e.target.value })}
-              placeholder="Replace with…"
+              placeholder={t('editor.replace.placeholder')}
             />
           </div>
           <div className="flex flex-wrap gap-4">
             <Checkbox
               checked={rule.matchCase}
               onChange={(e) => onChange({ ...rule, matchCase: e.target.checked })}
-              label="Match case"
+              label={t('editor.match_case')}
             />
             <Checkbox
               checked={rule.useRegex}
               onChange={(e) => onChange({ ...rule, useRegex: e.target.checked })}
-              label="Regex"
+              label={t('editor.regex')}
             />
             <Checkbox
               checked={rule.replaceAll}
               onChange={(e) => onChange({ ...rule, replaceAll: e.target.checked })}
-              label="Replace all"
+              label={t('editor.replace_all')}
             />
           </div>
         </div>
@@ -2506,12 +2573,12 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
           <Input
             value={rule.prefix}
             onChange={(e) => onChange({ ...rule, prefix: e.target.value })}
-            placeholder="Prefix"
+            placeholder={t('editor.prefix.placeholder')}
           />
           <Input
             value={rule.suffix}
             onChange={(e) => onChange({ ...rule, suffix: e.target.value })}
-            placeholder="Suffix"
+            placeholder={t('editor.suffix.placeholder')}
           />
         </div>
       );
@@ -2522,14 +2589,14 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
           value={rule.mode}
           onChange={(e) => onChange({ ...rule, mode: e.target.value as typeof rule.mode })}
         >
-          <option value="lower">lowercase</option>
-          <option value="upper">UPPERCASE</option>
-          <option value="title">Title Case</option>
-          <option value="sentence">Sentence case</option>
-          <option value="camel">camelCase</option>
-          <option value="pascal">PascalCase</option>
-          <option value="kebab">kebab-case</option>
-          <option value="snake">snake_case</option>
+          <option value="lower">{t('editor.case.lower')}</option>
+          <option value="upper">{t('editor.case.upper')}</option>
+          <option value="title">{t('editor.case.title')}</option>
+          <option value="sentence">{t('editor.case.sentence')}</option>
+          <option value="camel">{t('editor.case.camel')}</option>
+          <option value="pascal">{t('editor.case.pascal')}</option>
+          <option value="kebab">{t('editor.case.kebab')}</option>
+          <option value="snake">{t('editor.case.snake')}</option>
         </Select>
       );
 
@@ -2539,13 +2606,13 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
           value={rule.mode}
           onChange={(e) => onChange({ ...rule, mode: e.target.value as typeof rule.mode })}
         >
-          <option value="trim">Trim both ends</option>
-          <option value="trim_start">Trim start</option>
-          <option value="trim_end">Trim end</option>
-          <option value="collapse_spaces">Collapse internal spaces</option>
-          <option value="remove_spaces">Remove spaces</option>
-          <option value="remove_dashes">Remove dashes</option>
-          <option value="remove_underscores">Remove underscores</option>
+          <option value="trim">{t('editor.trim.trim')}</option>
+          <option value="trim_start">{t('editor.trim.trim_start')}</option>
+          <option value="trim_end">{t('editor.trim.trim_end')}</option>
+          <option value="collapse_spaces">{t('editor.trim.collapse_spaces')}</option>
+          <option value="remove_spaces">{t('editor.trim.remove_spaces')}</option>
+          <option value="remove_dashes">{t('editor.trim.remove_dashes')}</option>
+          <option value="remove_underscores">{t('editor.trim.remove_underscores')}</option>
         </Select>
       );
 
@@ -2555,12 +2622,12 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
           <Input
             value={rule.text}
             onChange={(e) => onChange({ ...rule, text: e.target.value })}
-            placeholder="Text to remove"
+            placeholder={t('editor.remove.placeholder')}
           />
           <Checkbox
             checked={rule.matchCase}
             onChange={(e) => onChange({ ...rule, matchCase: e.target.checked })}
-            label="Match case"
+            label={t('editor.match_case')}
           />
         </div>
       );
@@ -2572,32 +2639,32 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
             value={rule.position}
             onChange={(e) => onChange({ ...rule, position: e.target.value as typeof rule.position })}
           >
-            <option value="prefix">Prefix</option>
-            <option value="suffix">Suffix</option>
-            <option value="before_extension">Before extension</option>
+            <option value="prefix">{t('editor.position.prefix')}</option>
+            <option value="suffix">{t('editor.position.suffix')}</option>
+            <option value="before_extension">{t('editor.position.before_extension')}</option>
           </Select>
           <Input
             value={rule.separator}
             onChange={(e) => onChange({ ...rule, separator: e.target.value })}
-            placeholder="Separator"
+            placeholder={t('editor.separator.placeholder')}
           />
           <Input
             type="number"
             value={rule.start}
             onChange={(e) => onChange({ ...rule, start: Number(e.target.value) })}
-            placeholder="Start"
+            placeholder={t('editor.start.placeholder')}
           />
           <Input
             type="number"
             value={rule.step}
             onChange={(e) => onChange({ ...rule, step: Number(e.target.value) })}
-            placeholder="Step"
+            placeholder={t('editor.step.placeholder')}
           />
           <Input
             type="number"
             value={rule.padWidth}
             onChange={(e) => onChange({ ...rule, padWidth: Number(e.target.value) })}
-            placeholder="Pad width"
+            placeholder={t('editor.pad.placeholder')}
           />
         </div>
       );
@@ -2609,19 +2676,19 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
             value={rule.position}
             onChange={(e) => onChange({ ...rule, position: e.target.value as typeof rule.position })}
           >
-            <option value="prefix">Prefix</option>
-            <option value="suffix">Suffix</option>
-            <option value="before_extension">Before extension</option>
+            <option value="prefix">{t('editor.position.prefix')}</option>
+            <option value="suffix">{t('editor.position.suffix')}</option>
+            <option value="before_extension">{t('editor.position.before_extension')}</option>
           </Select>
           <Input
             value={rule.format}
             onChange={(e) => onChange({ ...rule, format: e.target.value })}
-            placeholder="YYYY-MM-DD"
+            placeholder={t('editor.date_format.placeholder')}
           />
           <Input
             value={rule.separator}
             onChange={(e) => onChange({ ...rule, separator: e.target.value })}
-            placeholder="Separator"
+            placeholder={t('editor.separator.placeholder')}
           />
         </div>
       );
@@ -2633,11 +2700,11 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
             value={rule.mode}
             onChange={(e) => onChange({ ...rule, mode: e.target.value as typeof rule.mode })}
           >
-            <option value="keep">Keep as-is</option>
-            <option value="lowercase">Lowercase</option>
-            <option value="uppercase">Uppercase</option>
-            <option value="replace">Replace</option>
-            <option value="remove">Remove</option>
+            <option value="keep">{t('editor.extension.keep')}</option>
+            <option value="lowercase">{t('editor.extension.lowercase')}</option>
+            <option value="uppercase">{t('editor.extension.uppercase')}</option>
+            <option value="replace">{t('editor.extension.replace')}</option>
+            <option value="remove">{t('editor.extension.remove')}</option>
           </Select>
           {rule.mode === 'replace' && (
             <Input
@@ -2666,6 +2733,7 @@ function PresetList({
   onDelete?: (p: Preset) => void;
   emptyMessage: string;
 }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-3">
       {presets.length === 0 && <EmptyState message={emptyMessage} />}
@@ -2674,24 +2742,24 @@ function PresetList({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-foreground">{preset.name}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{preset.rules.length} rules</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('presets.rules_count', { count: preset.rules.length })}</p>
             </div>
             <Badge tone={preset.isSample ? 'accent' : 'ok'} dot>
-              {preset.isSample ? 'sample' : 'saved'}
+              {preset.isSample ? t('presets.sample') : t('presets.saved')}
             </Badge>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button size="sm" variant="secondary" onClick={() => onLoad(preset)}>Load</Button>
+            <Button size="sm" variant="secondary" onClick={() => onLoad(preset)}>{t('presets.load')}</Button>
             <Button
               size="sm"
               variant="ghost"
               disabled={preset.isSample}
               onClick={() => onEdit(preset)}
             >
-              Edit name
+              {t('presets.edit_name')}
             </Button>
             {onDelete && !preset.isSample && (
-              <Button size="sm" variant="danger" onClick={() => onDelete(preset)}>Delete</Button>
+              <Button size="sm" variant="danger" onClick={() => onDelete(preset)}>{t('common.delete')}</Button>
             )}
           </div>
         </div>
@@ -2700,20 +2768,20 @@ function PresetList({
   );
 }
 
-function getSelectedLabel(sources: SourceSelection[]) {
+function getSelectedLabel(sources: SourceSelection[], t: ReturnType<typeof useI18n>['t']) {
   if (sources.length === 0) {
-    return '0 selected';
+    return t('selected.none');
   }
 
   if (sources.every((source) => source.isDirectory)) {
-    return `${sources.length} ${sources.length === 1 ? 'folder' : 'folders'} selected`;
+    return t('selected.folders', { count: sources.length });
   }
 
   if (sources.every((source) => !source.isDirectory)) {
-    return `${sources.length} ${sources.length === 1 ? 'file' : 'files'} selected`;
+    return t('selected.files', { count: sources.length });
   }
 
-  return `${sources.length} items selected`;
+  return t('selected.items', { count: sources.length });
 }
 
 function getAvailableSourceModes(sources: SourceSelection[]): SourceMode[] {
@@ -2731,17 +2799,17 @@ function getAvailableSourceModes(sources: SourceSelection[]): SourceMode[] {
   return modes;
 }
 
-function getUndoStatusLabel(entry: HistoryEntry) {
+function getUndoStatusLabel(entry: HistoryEntry, t: ReturnType<typeof useI18n>['t']) {
   switch (entry.undoState) {
     case 'ready':
-      return 'undo ready';
+      return t('undo.ready');
     case 'archived':
-      return 'archived';
+      return t('undo.archived');
     case 'overlap':
-      return 'overlap';
+      return t('undo.overlap');
     case 'missing':
-      return 'files not found';
+      return t('undo.missing');
     case 'occupied':
-      return 'occupied';
+      return t('undo.occupied');
   }
 }
