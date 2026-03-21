@@ -1,0 +1,26 @@
+import { en } from './en';
+
+export const fr = {
+  ...en,
+  'locale.label': 'Langue',
+  'locale.helper': 'Change la langue de l application. Les traductions de la communaute se trouvent dans src/renderer/locales.',
+  'settings.language': 'Langue',
+  'settings.appearance': 'Apparence',
+  'settings.title': 'Parametres',
+  'topbar.add': 'Ajouter',
+  'topbar.clear': 'Vider',
+  'topbar.presets': 'Presets',
+  'topbar.history': 'Historique',
+  'topbar.settings': 'Parametres',
+  'topbar.rename': 'Renommer',
+  'history.undo': 'Annuler',
+  'common.cancel': 'Annuler',
+  'common.delete': 'Supprimer',
+  'presets.load': 'Charger',
+  'presets.edit_name': 'Modifier le nom',
+  'updates.check_now': 'Verifier',
+  'updates.download': 'Telecharger la mise a jour',
+  'updates.restart_install': 'Redemarrer pour installer',
+  'appearance.cycle': 'Changer',
+  'appearance.new_custom': 'Nouveau theme personnalise',
+} as const;

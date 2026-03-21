@@ -65,6 +65,8 @@ bun run start
 ## Notes
 
 - UI preferences such as theme and panel width persist across restarts.
+- UI language now persists across restarts and can be changed from `Settings > Appearance`.
+- Community translations live in `src/renderer/locales/`. Add a new locale file and register it in `src/renderer/i18n.tsx`.
 - Packaged releases can check GitHub Releases for updates automatically, download them in the background, and install on restart.
 - Undo is blocked when current renamed files are missing, restore targets are occupied, or older batches overlap with newer undo-ready batches.
 - Release tags trigger packaged artifacts through GitHub Actions.
