@@ -2,6 +2,7 @@ import { en } from './en';
 
 export const fr = {
   ...en,
+  'topbar.tagline': (vars?: Record<string, unknown>) => `v${vars?.version ?? ''} · renommage par lot`,
   'locale.label': 'Langue',
   'locale.helper': 'Change la langue de l application. Les traductions de la communaute se trouvent dans src/renderer/locales.',
   'settings.language': 'Langue',

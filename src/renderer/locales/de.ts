@@ -2,6 +2,7 @@ import { en } from './en';
 
 export const de = {
   ...en,
+  'topbar.tagline': (vars?: Record<string, unknown>) => `v${vars?.version ?? ''} · Stapelweise umbenennen`,
   'locale.label': 'Sprache',
   'locale.helper': 'Andert die App-Sprache. Community-Ubersetzungen liegen in src/renderer/locales.',
   'settings.language': 'Sprache',

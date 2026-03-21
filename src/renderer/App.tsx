@@ -209,6 +209,7 @@ const LEFT_WIDTH_STORAGE_KEY = 'left_panel_width';
 const DEFAULT_LEFT_WIDTH_RATIO = 0.28;
 const MIN_LEFT_WIDTH_RATIO = 0.18;
 const MAX_LEFT_WIDTH_RATIO = 0.45;
+const APP_VERSION = __APP_VERSION__;
 
 function clampLeftWidthRatio(value: number) {
   return Math.min(MAX_LEFT_WIDTH_RATIO, Math.max(MIN_LEFT_WIDTH_RATIO, value));
@@ -1940,7 +1941,9 @@ function TopBar({
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Fast Renamer
             </p>
-            <p className="text-[10px] text-muted-foreground/50 hidden sm:block">{t('topbar.tagline')}</p>
+            <p className="text-[10px] text-muted-foreground/50 hidden sm:block">
+              {t('topbar.tagline', { version: APP_VERSION })}
+            </p>
           </div>
         </div>
 

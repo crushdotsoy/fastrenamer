@@ -59,7 +59,7 @@ export const en = {
   'new_name.starter.folder': 'Folder + number',
   'new_name.starter.date': 'Date + number',
 
-  'topbar.tagline': 'v1 · batch rename',
+  'topbar.tagline': (vars?: Record<string, unknown>) => `v${value(vars, 'version')} · batch rename`,
   'topbar.add': 'Add',
   'topbar.clear': 'Clear',
   'topbar.presets': 'Presets',

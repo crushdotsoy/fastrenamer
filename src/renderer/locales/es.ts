@@ -2,6 +2,7 @@ import { en } from './en';
 
 export const es = {
   ...en,
+  'topbar.tagline': (vars?: Record<string, unknown>) => `v${vars?.version ?? ''} · renombrado por lotes`,
   'locale.label': 'Idioma',
   'locale.helper': 'Cambia el idioma de la aplicacion. Las traducciones de la comunidad viven en src/renderer/locales.',
   'settings.language': 'Idioma',

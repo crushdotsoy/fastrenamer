@@ -2,6 +2,7 @@ import { en } from './en';
 
 export const it = {
   ...en,
+  'topbar.tagline': (vars?: Record<string, unknown>) => `v${vars?.version ?? ''} · rinomina in blocco`,
   'locale.label': 'Lingua',
   'locale.helper': 'Cambia la lingua dell applicazione. Le traduzioni della community si trovano in src/renderer/locales.',
   'settings.language': 'Lingua',

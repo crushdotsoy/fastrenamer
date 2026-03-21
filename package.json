@@ -1,7 +1,7 @@
 {
   "name": "fast-renamer",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.5",
   "description": "Desktop batch renaming utility built with Bun, Electron, React, and TypeScript.",
   "author": "crushdotsoy",
   "type": "module",

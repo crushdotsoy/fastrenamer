@@ -59,7 +59,7 @@ export const ptPT = {
   'new_name.starter.folder': 'Pasta + numero',
   'new_name.starter.date': 'Data + numero',
 
-  'topbar.tagline': 'v1 · renomeacao em lote',
+  'topbar.tagline': (vars?: Record<string, unknown>) => `v${value(vars, 'version')} · renomeacao em lote`,
   'topbar.add': 'Adicionar',
   'topbar.clear': 'Limpar',
   'topbar.presets': 'Predefinicoes',
