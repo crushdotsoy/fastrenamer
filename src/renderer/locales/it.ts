@@ -22,6 +22,8 @@ export const it = {
   'updates.check_now': 'Controlla ora',
   'updates.download': 'Scarica aggiornamento',
   'updates.restart_install': 'Riavvia per installare',
+  'updates.summary.up_to_date_manual': 'Questa installazione corrisponde all ultima release pubblicata. I futuri aggiornamenti apriranno GitHub per un download manuale.',
+  'updates.summary.idle_manual': 'Questa build controlla gli aggiornamenti, ma le installazioni devono essere scaricate manualmente da GitHub Releases.',
   'appearance.cycle': 'Cambia',
   'appearance.new_custom': 'Nuovo tema personalizzato',
 } as const;

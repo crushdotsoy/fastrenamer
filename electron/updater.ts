@@ -43,6 +43,18 @@ function getMacManualDownloadMessage() {
   return undefined;
 }
 
+function getWindowsPortableManualDownloadMessage() {
+  if (process.platform !== 'win32' || !app.isPackaged) {
+    return undefined;
+  }
+
+  if (!process.env.PORTABLE_EXECUTABLE_FILE) {
+    return undefined;
+  }
+
+  return 'This Windows portable build can check for updates, but new versions must be downloaded manually from GitHub Releases.';
+}
+
 function getReleaseDownloadUrl(version?: string) {
   if (!version) {
     return `${GITHUB_RELEASES_URL}/latest`;
@@ -95,7 +107,7 @@ export class AppUpdaterManager {
       return;
     }
 
-    this.manualDownloadMessage = getMacManualDownloadMessage();
+    this.manualDownloadMessage = getMacManualDownloadMessage() ?? getWindowsPortableManualDownloadMessage();
     this.manualDownloadOnly = Boolean(this.manualDownloadMessage);
 
     if (this.manualDownloadOnly) {

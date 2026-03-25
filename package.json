@@ -51,7 +51,8 @@
     },
     "win": {
       "target": [
-        "nsis"
+        "nsis",
+        "portable"
       ],
       "artifactName": "Fast-Renamer-${version}-${arch}.${ext}"
     },
@@ -61,8 +62,12 @@
       "artifactName": "Fast-Renamer-${version}.${ext}"
     },
     "nsis": {
+      "artifactName": "Fast-Renamer-Setup-${version}-${arch}.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
+    },
+    "portable": {
+      "artifactName": "Fast-Renamer-Portable-${version}-${arch}.${ext}"
     }
   },
   "dependencies": {

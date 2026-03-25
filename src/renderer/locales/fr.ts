@@ -22,6 +22,8 @@ export const fr = {
   'updates.check_now': 'Verifier',
   'updates.download': 'Telecharger la mise a jour',
   'updates.restart_install': 'Redemarrer pour installer',
+  'updates.summary.up_to_date_manual': 'Cette installation correspond a la derniere release publiee. Les prochaines mises a jour ouvriront GitHub pour un telechargement manuel.',
+  'updates.summary.idle_manual': 'Cette build verifie les mises a jour, mais les installations doivent etre telechargees manuellement depuis GitHub Releases.',
   'appearance.cycle': 'Changer',
   'appearance.new_custom': 'Nouveau theme personnalise',
 } as const;
