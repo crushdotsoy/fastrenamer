@@ -107,6 +107,8 @@ export const ptPT = {
   'rules.step': (vars?: Record<string, unknown>) => `Passo ${value(vars, 'count')}`,
   'rules.move_up': 'Mover para cima',
   'rules.move_down': 'Mover para baixo',
+  'rules.expand': 'Expandir regra',
+  'rules.collapse': 'Colapsar regra',
   'rules.delete': 'Apagar regra',
 
   'editor.new_name.placeholder': 'name_{seq_num:0001}',

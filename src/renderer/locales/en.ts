@@ -107,6 +107,8 @@ export const en = {
   'rules.step': (vars?: Record<string, unknown>) => `Step ${value(vars, 'count')}`,
   'rules.move_up': 'Move up',
   'rules.move_down': 'Move down',
+  'rules.expand': 'Expand rule',
+  'rules.collapse': 'Collapse rule',
   'rules.delete': 'Delete rule',
 
   'editor.new_name.placeholder': 'name_{seq_num:0001}',

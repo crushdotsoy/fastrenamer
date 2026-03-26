@@ -207,12 +207,18 @@ const SOURCE_LIST_COLLATOR = new Intl.Collator(undefined, {
 });
 const LEFT_WIDTH_STORAGE_KEY = 'left_panel_width';
 const DEFAULT_LEFT_WIDTH_RATIO = 0.28;
-const MIN_LEFT_WIDTH_RATIO = 0.18;
 const MAX_LEFT_WIDTH_RATIO = 0.45;
+const MIN_LEFT_PANEL_WIDTH_PX = 453;
+const MIN_PREVIEW_PANEL_WIDTH_PX = 320;
 const APP_VERSION = __APP_VERSION__;
 
-function clampLeftWidthRatio(value: number) {
-  return Math.min(MAX_LEFT_WIDTH_RATIO, Math.max(MIN_LEFT_WIDTH_RATIO, value));
+function clampLeftWidthRatio(value: number, containerWidth: number) {
+  const safeWidth = Math.max(containerWidth, 1);
+  const minRatio = Math.min(1, MIN_LEFT_PANEL_WIDTH_PX / safeWidth);
+  const previewSafeWidth = Math.max(safeWidth - MIN_PREVIEW_PANEL_WIDTH_PX, 0);
+  const dynamicMaxRatio = Math.min(1, previewSafeWidth / safeWidth);
+  const maxRatio = Math.max(minRatio, Math.max(MAX_LEFT_WIDTH_RATIO, dynamicMaxRatio));
+  return Math.min(maxRatio, Math.max(minRatio, value));
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -802,14 +808,15 @@ export function App() {
 
   const [leftWidthRatio, setLeftWidthRatio] = useState(() => {
     const stored = Number(localStorage.getItem(LEFT_WIDTH_STORAGE_KEY));
+    const fallbackContainerWidth = Math.max(window.innerWidth - 16, 1);
     if (Number.isFinite(stored)) {
       if (stored > 1) {
         // Migrate older fixed-pixel widths to the new proportional layout.
-        return clampLeftWidthRatio(stored / Math.max(window.innerWidth - 16, 1));
+        return clampLeftWidthRatio(stored / fallbackContainerWidth, fallbackContainerWidth);
       }
-      return clampLeftWidthRatio(stored);
+      return clampLeftWidthRatio(stored, fallbackContainerWidth);
     }
-    return DEFAULT_LEFT_WIDTH_RATIO;
+    return clampLeftWidthRatio(DEFAULT_LEFT_WIDTH_RATIO, fallbackContainerWidth);
   });
   const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 1024);
   const isResizing = useRef(false);
@@ -865,16 +872,23 @@ export function App() {
       const containerWidth = resizeContainerWidth.current;
       if (containerWidth <= 0) return;
       const deltaRatio = (e.clientX - resizeStartX.current) / containerWidth;
-      setLeftWidthRatio(clampLeftWidthRatio(resizeStartWidthRatio.current + deltaRatio));
+      setLeftWidthRatio(clampLeftWidthRatio(resizeStartWidthRatio.current + deltaRatio, containerWidth));
     }
     function onMouseUp() { isResizing.current = false; }
+    function onWindowResize() {
+      const containerWidth = desktopLayoutRef.current?.getBoundingClientRect().width ?? window.innerWidth;
+      setLeftWidthRatio((current) => clampLeftWidthRatio(current, containerWidth));
+    }
+
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('resize', onWindowResize);
 
     return () => {
       mq.removeEventListener('change', mqHandler);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('resize', onWindowResize);
     };
   }, []);
 
@@ -2249,6 +2263,17 @@ function RulesPanel({
   const ruleMeta = useMemo(() => getRuleMeta(t), [t]);
   const [draggedRuleId, setDraggedRuleId] = useState<string | null>(null);
   const [dropTargetRuleId, setDropTargetRuleId] = useState<string | null>(null);
+  const [collapsedRuleIds, setCollapsedRuleIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setCollapsedRuleIds((current) => current.filter((ruleId) => rules.some((rule) => rule.id === ruleId)));
+  }, [rules]);
+
+  function toggleRuleCollapsed(ruleId: string) {
+    setCollapsedRuleIds((current) =>
+      current.includes(ruleId) ? current.filter((id) => id !== ruleId) : [...current, ruleId],
+    );
+  }
 
   return (
     <Panel className="h-full">
@@ -2297,8 +2322,10 @@ function RulesPanel({
             index={index}
             dragging={draggedRuleId === rule.id}
             dropTarget={dropTargetRuleId === rule.id}
+            collapsed={collapsedRuleIds.includes(rule.id)}
             onUpdate={(updater) => onUpdateRule(rule.id, updater)}
             onMove={(dir) => onMoveRule(rule.id, dir)}
+            onToggleCollapsed={() => toggleRuleCollapsed(rule.id)}
             onDragStart={() => {
               setDraggedRuleId(rule.id);
               setDropTargetRuleId(rule.id);
@@ -2332,8 +2359,10 @@ function RuleCard({
   index,
   dragging,
   dropTarget,
+  collapsed,
   onUpdate,
   onMove,
+  onToggleCollapsed,
   onDragStart,
   onDragEnter,
   onDragEnd,
@@ -2344,8 +2373,10 @@ function RuleCard({
   index: number;
   dragging: boolean;
   dropTarget: boolean;
+  collapsed: boolean;
   onUpdate: (updater: (r: RenameRule) => RenameRule) => void;
   onMove: (dir: 'up' | 'down') => void;
+  onToggleCollapsed: () => void;
   onDragStart: () => void;
   onDragEnter: () => void;
   onDragEnd: () => void;
@@ -2358,11 +2389,6 @@ function RuleCard({
 
   return (
     <div
-      draggable
-      onDragStart={(event) => {
-        event.dataTransfer.effectAllowed = 'move';
-        onDragStart();
-      }}
       onDragOver={(event) => event.preventDefault()}
       onDragEnter={onDragEnter}
       onDragEnd={onDragEnd}
@@ -2379,28 +2405,49 @@ function RuleCard({
       style={{ borderColor: `${meta.color}30`, borderLeftColor: meta.color, borderLeftWidth: '3px' }}
     >
       {/* Card header */}
-      <div className="flex items-center justify-between gap-2 px-3.5 py-3">
+      <div
+        className="grid grid-cols-[auto_1fr_auto] items-center gap-2 px-3.5 py-3"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            onToggleCollapsed();
+          }
+        }}
+      >
         <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            className="inline-flex h-7 w-7 cursor-grab items-center justify-center rounded-md text-muted-foreground hover:bg-surface-elevated hover:text-foreground active:cursor-grabbing"
-            aria-label={t('rules.drag')}
-          >
-            <GripVertical className="h-3.5 w-3.5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              draggable
+              onDragStart={(event) => {
+                event.dataTransfer.effectAllowed = 'move';
+                onDragStart();
+              }}
+              className="inline-flex h-7 w-7 cursor-grab items-center justify-center rounded-md text-muted-foreground hover:bg-surface-elevated hover:text-foreground active:cursor-grabbing"
+              aria-label={t('rules.drag')}
+            >
+              <GripVertical className="h-3.5 w-3.5" />
+            </button>
+            <Tooltip content={collapsed ? t('rules.expand') : t('rules.collapse')}>
+              <IconButton className="h-7 w-7" onClick={onToggleCollapsed} aria-label={collapsed ? t('rules.expand') : t('rules.collapse')}>
+                <ChevronDown className={cn('h-3.5 w-3.5 transition-transform duration-150', !collapsed && 'rotate-180')} />
+              </IconButton>
+            </Tooltip>
+          </div>
+        </div>
+        <div className="flex min-w-0 items-center justify-center gap-2.5">
           <span
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
             style={{ backgroundColor: `${meta.color}18`, color: meta.color }}
           >
             <Icon className="h-3.5 w-3.5" />
           </span>
-          <div>
-            <p className="text-sm font-semibold text-foreground leading-none">{meta.label}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{t('rules.step', { count: index + 1 })}</p>
+          <div className="flex min-h-7 flex-col justify-center text-center">
+            <p className="text-sm font-semibold leading-none text-foreground">{meta.label}</p>
+            <p className="mt-1 text-[10px] leading-none text-muted-foreground">{t('rules.step', { count: index + 1 })}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center justify-self-end gap-0.5">
           <Switch
             checked={rule.enabled}
             onCheckedChange={(checked) => onUpdate((r) => ({ ...r, enabled: checked }))}
@@ -2426,10 +2473,11 @@ function RuleCard({
         </div>
       </div>
 
-      {/* Rule editor */}
-      <div className="border-t px-3.5 py-3" style={{ borderColor: `${meta.color}18` }}>
-        <RuleEditor rule={rule} onChange={(next) => onUpdate(() => next)} />
-      </div>
+      {!collapsed && (
+        <div className="border-t px-3.5 py-3" style={{ borderColor: `${meta.color}18` }}>
+          <RuleEditor rule={rule} onChange={(next) => onUpdate(() => next)} />
+        </div>
+      )}
     </div>
   );
 }
