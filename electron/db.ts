@@ -101,9 +101,10 @@ export class AppDatabase {
   }
 
   private migrate() {
-    const version = Number(
-      this.database.prepare('PRAGMA user_version;').get()['user_version'] ?? 0,
-    );
+    const versionRow = this.database
+      .prepare('PRAGMA user_version;')
+      .get() as Record<string, unknown> | undefined;
+    const version = Number(versionRow?.user_version ?? 0);
 
     if (version < 1) {
       this.database.exec(`

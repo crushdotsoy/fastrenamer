@@ -11,10 +11,9 @@
     "composite": true,
     "noEmit": true,
     "types": ["node", "vitest/globals"],
-    "baseUrl": ".",
     "paths": {
-      "@shared/*": ["src/shared/*"],
-      "@fast-renamer/rename-engine": ["packages/rename-engine/src/index.ts"]
+      "@shared/*": ["./src/shared/*"],
+      "@fast-renamer/rename-engine": ["./packages/rename-engine/src/index.ts"]
     }
   },
   "include": ["electron", "vite.config.ts", "tailwind.config.ts", "src/shared", "packages", "src/**/*.test.ts"]
