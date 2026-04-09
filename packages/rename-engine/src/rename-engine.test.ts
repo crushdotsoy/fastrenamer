@@ -58,6 +58,27 @@ describe('applyRulesToName', () => {
       }),
     ).toBe('name_0002_Report Final.txt');
   });
+
+  it('evaluates custom rules against the current naming context', () => {
+    const rules: RenameRule[] = [
+      {
+        id: 'custom',
+        type: 'custom_rule',
+        enabled: true,
+        expression: 'snake(originalStem) + "_" + pad(index, 3) + ext(lower(extension))',
+      },
+    ];
+
+    expect(
+      applyRulesToName('Quarterly Report.TXT', false, rules, {
+        index: 1,
+        total: 3,
+        originalName: 'Quarterly Report.TXT',
+        parentPath: '/tmp/Clients',
+        sourcePath: '/tmp/Clients/Quarterly Report.TXT',
+      }),
+    ).toBe('quarterly_report_002.txt');
+  });
 });
 
 describe('generatePreview', () => {
@@ -201,6 +222,83 @@ describe('generatePreview', () => {
     expect(preview.rows.map((row) => row.status)).toEqual(['conflict', 'conflict']);
     expect(preview.summary.conflict).toBe(2);
     expect(preview.summary.blocked).toBe(true);
+  });
+
+  it('marks custom rule failures as row-level invalid results', () => {
+    const preview = generatePreview({
+      items: [
+        {
+          sourcePath: '/tmp/alpha.txt',
+          name: 'alpha.txt',
+          parentPath: '/tmp',
+          isDirectory: false,
+        },
+      ],
+      rules: [
+        {
+          id: 'custom',
+          type: 'custom_rule',
+          enabled: true,
+          expression: 'missingHelper(originalStem)',
+        },
+      ],
+      platform: 'linux',
+      existingPathExists: () => false,
+    });
+
+    expect(preview.rows[0].status).toBe('invalid');
+    expect(preview.rows[0].reasons.join(' ')).toContain('Custom rule failed');
+    expect(preview.rows[0].reasons.join(' ')).toContain('missingHelper');
+    expect(preview.summary.invalid).toBe(1);
+    expect(preview.summary.blocked).toBe(true);
+  });
+
+  it('distinguishes suffix from before-extension positioning', () => {
+    const item: ResolvedRenameItem = {
+      sourcePath: '/tmp/report.txt',
+      name: 'report.txt',
+      parentPath: '/tmp',
+      isDirectory: false,
+    };
+
+    const suffixPreview = generatePreview({
+      items: [item],
+      rules: [
+        {
+          id: 'suffix',
+          type: 'sequence_insert',
+          enabled: true,
+          position: 'suffix',
+          start: 1,
+          step: 1,
+          padWidth: 0,
+          separator: '_',
+        },
+      ],
+      platform: 'linux',
+      existingPathExists: () => false,
+    });
+
+    const beforeExtensionPreview = generatePreview({
+      items: [item],
+      rules: [
+        {
+          id: 'before-extension',
+          type: 'sequence_insert',
+          enabled: true,
+          position: 'before_extension',
+          start: 1,
+          step: 1,
+          padWidth: 0,
+          separator: '_',
+        },
+      ],
+      platform: 'linux',
+      existingPathExists: () => false,
+    });
+
+    expect(suffixPreview.rows[0].proposedName).toBe('report.txt_1');
+    expect(beforeExtensionPreview.rows[0].proposedName).toBe('report_1.txt');
   });
 
   it('marks case-only renames as ok with staging guidance on macOS', () => {

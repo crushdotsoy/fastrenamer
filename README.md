@@ -11,6 +11,7 @@ Fast Renamer 0.1.0 focuses on safe, desktop-style bulk renaming with a live prev
 - Single-workspace desktop UI
 - Live preview with conflict and invalid-name blocking
 - Rule stack with drag-and-drop reordering
+- Custom Rule beta with safe inline expressions
 - Direct file and folder renaming
 - Source modes for:
   - picked files

@@ -28,6 +28,10 @@ const renameRuleSchema = z.discriminatedUnion('type', [
     template: z.string(),
   }),
   baseRuleSchema.extend({
+    type: z.literal('custom_rule'),
+    expression: z.string(),
+  }),
+  baseRuleSchema.extend({
     type: z.literal('find_replace'),
     find: z.string(),
     replace: z.string(),

@@ -74,6 +74,17 @@ const SAMPLE_PRESETS: Array<{ name: string; rules: RenameRule[] }> = [
       },
     ],
   },
+  {
+    name: 'Custom Rule Beta',
+    rules: [
+      {
+        id: 'sample-custom',
+        type: 'custom_rule',
+        enabled: true,
+        expression: 'snake(originalStem) + "_" + pad(index, 3) + ext(lower(extension))',
+      },
+    ],
+  },
 ];
 
 export class AppDatabase {

@@ -2,6 +2,7 @@ export type PlatformTarget = 'darwin' | 'win32' | 'linux';
 
 export type RenameRule =
   | NewNameRule
+  | CustomRule
   | FindReplaceRule
   | PrefixSuffixRule
   | CaseTransformRule
@@ -20,6 +21,11 @@ export interface BaseRule {
 export interface NewNameRule extends BaseRule {
   type: 'new_name';
   template: string;
+}
+
+export interface CustomRule extends BaseRule {
+  type: 'custom_rule';
+  expression: string;
 }
 
 export interface FindReplaceRule extends BaseRule {

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Custom Rule beta for safe inline expression-based renaming inside the existing rule stack
+- Curated helper functions and reusable examples for building full-name expressions
+- Sample preset demonstrating the new custom-rule workflow
+
+### Changed
+
+- Scripted custom-rule failures now surface as invalid preview rows instead of aborting the whole preview
+- Sequence and date/time position handling now distinguishes `suffix` from `before_extension`
+
 ## 0.1.2 - 2026-03-19
 
 ### Added

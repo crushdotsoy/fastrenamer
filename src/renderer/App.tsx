@@ -60,6 +60,10 @@ import {
   Panel,
   PanelHeader,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Switch,
   Toast,
   ToastAction,
@@ -110,6 +114,7 @@ const SOURCE_MODE_OPTIONS: SourceMode[] = [
 
 const RULE_TYPE_ORDER: RenameRule['type'][] = [
   'new_name',
+  'custom_rule',
   'find_replace',
   'prefix_suffix',
   'case_transform',
@@ -170,6 +175,7 @@ function getRuleMeta(t: ReturnType<typeof useI18n>['t']): Record<
 > {
   return {
     new_name: { label: t('rule.new_name'), color: '#38bdf8', icon: Type },
+    custom_rule: { label: t('rule.custom_rule'), color: '#f97316', icon: Braces },
     find_replace: { label: t('rule.find_replace'), color: '#4e8fff', icon: Replace },
     prefix_suffix: { label: t('rule.prefix_suffix'), color: '#a78bfa', icon: Braces },
     case_transform: { label: t('rule.case_transform'), color: '#34d399', icon: CaseSensitive },
@@ -200,6 +206,62 @@ function getNewNameStarters(t: ReturnType<typeof useI18n>['t']) {
     { label: t('new_name.starter.date'), value: '{date}_{seq_num:0001}' },
   ] as const;
 }
+
+function getCustomRuleQuickInsert() {
+  return [
+    { label: 'currentName', value: 'currentName' },
+    { label: 'currentStem', value: 'currentStem' },
+    { label: 'originalStem', value: 'originalStem' },
+    { label: 'extension', value: 'extension' },
+    { label: 'parent', value: 'parent' },
+    { label: 'sourcePath', value: 'sourcePath' },
+    { label: 'index', value: 'index' },
+    { label: 'total', value: 'total' },
+    { label: 'isDirectory', value: 'isDirectory' },
+  ] as const;
+}
+
+function getCustomRuleExamples() {
+  return [
+    {
+      label: 'Snake + sequence',
+      value: 'snake(originalStem) + "_" + pad(index, 3) + ext(lower(extension))',
+    },
+    {
+      label: 'Parent prefix',
+      value: 'kebab(parent) + "_" + kebab(currentStem) + ext(extension)',
+    },
+    {
+      label: 'Conditional camera import',
+      value:
+        'startsWith(originalStem, "IMG_") ? "photo_" + pad(index, 4) + ext(lower(extension)) : currentName',
+    },
+  ] as const;
+}
+
+const CUSTOM_RULE_HELPERS = [
+  'lower(text)',
+  'upper(text)',
+  'trim(text)',
+  'title(text)',
+  'camel(text)',
+  'pascal(text)',
+  'kebab(text)',
+  'snake(text)',
+  'replace(text, search, replacement)',
+  'replaceAll(text, search, replacement)',
+  'regexReplace(text, pattern, replacement, flags)',
+  'pad(value, width, fill?)',
+  'slice(text, start, end?)',
+  'startsWith(text, search)',
+  'endsWith(text, search)',
+  'includes(text, search)',
+  'basename(path)',
+  'dirname(path)',
+  'len(text)',
+  'when(condition, yes, no)',
+  'ext(value)',
+] as const;
 
 const SOURCE_LIST_COLLATOR = new Intl.Collator(undefined, {
   numeric: true,
@@ -239,6 +301,8 @@ function createRule(type: RenameRule['type']): RenameRule {
   switch (type) {
     case 'new_name':
       return { id, type, enabled: true, template: 'name_{seq_num:0001}' };
+    case 'custom_rule':
+      return { id, type, enabled: true, expression: 'currentName' };
     case 'find_replace':
       return { id, type, enabled: true, find: '', replace: '', matchCase: false, useRegex: false, replaceAll: true };
     case 'prefix_suffix':
@@ -1412,26 +1476,31 @@ export function App() {
               </label>
               <Select
                 value={draftSourceMode}
-                onChange={(e) => handleDraftSourceModeChange(e.target.value as SourceMode)}
+                onValueChange={(value) => handleDraftSourceModeChange(value as SourceMode)}
               >
-                {availableDraftModes.includes('picked_folders') && (
-                  <option value="picked_folders">{sourceModeMeta.picked_folders.label}</option>
-                )}
-                {availableDraftModes.includes('picked_files') && (
-                  <option value="picked_files">{sourceModeMeta.picked_files.label}</option>
-                )}
-                {availableDraftModes.includes('top_level_folders') && (
-                  <option value="top_level_folders">{sourceModeMeta.top_level_folders.label}</option>
-                )}
-                {availableDraftModes.includes('subfolders') && (
-                  <option value="subfolders">{sourceModeMeta.subfolders.label}</option>
-                )}
-                {availableDraftModes.includes('top_level_files') && (
-                  <option value="top_level_files">{sourceModeMeta.top_level_files.label}</option>
-                )}
-                {availableDraftModes.includes('files_recursive') && (
-                  <option value="files_recursive">{sourceModeMeta.files_recursive.label}</option>
-                )}
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableDraftModes.includes('picked_folders') && (
+                    <SelectItem value="picked_folders">{sourceModeMeta.picked_folders.label}</SelectItem>
+                  )}
+                  {availableDraftModes.includes('picked_files') && (
+                    <SelectItem value="picked_files">{sourceModeMeta.picked_files.label}</SelectItem>
+                  )}
+                  {availableDraftModes.includes('top_level_folders') && (
+                    <SelectItem value="top_level_folders">{sourceModeMeta.top_level_folders.label}</SelectItem>
+                  )}
+                  {availableDraftModes.includes('subfolders') && (
+                    <SelectItem value="subfolders">{sourceModeMeta.subfolders.label}</SelectItem>
+                  )}
+                  {availableDraftModes.includes('top_level_files') && (
+                    <SelectItem value="top_level_files">{sourceModeMeta.top_level_files.label}</SelectItem>
+                  )}
+                  {availableDraftModes.includes('files_recursive') && (
+                    <SelectItem value="files_recursive">{sourceModeMeta.files_recursive.label}</SelectItem>
+                  )}
+                </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">{sourceModeMeta[draftSourceMode].detail}</p>
             </div>
@@ -1712,12 +1781,17 @@ export function App() {
             <div className="rounded-xl border border-border bg-card p-3">
               <label className="space-y-2">
                 <span className="text-xs text-muted-foreground">{t('locale.label')}</span>
-                <Select value={locale} onChange={(event) => setLocale(event.target.value as AppLocale)}>
-                  {AVAILABLE_LOCALES.map((option) => (
-                    <option key={option.code} value={option.code}>
-                      {option.nativeLabel}
-                    </option>
-                  ))}
+                <Select value={locale} onValueChange={(value) => setLocale(value as AppLocale)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AVAILABLE_LOCALES.map((option) => (
+                      <SelectItem key={option.code} value={option.code}>
+                        {option.nativeLabel}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">{t('locale.helper')}</p>
               </label>
@@ -2516,16 +2590,11 @@ function NewNameRuleEditor({
   return (
     <div className="space-y-3">
       <div className="space-y-2">
-        <input
+        <Input
           ref={inputRef}
           value={rule.template}
           onChange={(e) => onChange({ ...rule, template: e.target.value })}
           placeholder={t('editor.new_name.placeholder')}
-          className={cn(
-            'h-9 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground outline-none',
-            'placeholder:text-muted-foreground transition-colors',
-            'focus:border-accent/60 focus:ring-2 focus:ring-accent/10',
-          )}
         />
         <p className="text-xs text-muted-foreground">
           {t('editor.new_name.help')}
@@ -2577,11 +2646,128 @@ function NewNameRuleEditor({
   );
 }
 
+function CustomRuleEditor({
+  rule,
+  onChange,
+}: {
+  rule: Extract<RenameRule, { type: 'custom_rule' }>;
+  onChange: (rule: Extract<RenameRule, { type: 'custom_rule' }>) => void;
+}) {
+  const { t } = useI18n();
+  const quickInsert = useMemo(() => getCustomRuleQuickInsert(), []);
+  const examples = useMemo(() => getCustomRuleExamples(), []);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  function insertSnippet(snippet: string) {
+    const input = inputRef.current;
+    if (!input) {
+      onChange({ ...rule, expression: `${rule.expression}${snippet}` });
+      return;
+    }
+
+    const start = input.selectionStart ?? rule.expression.length;
+    const end = input.selectionEnd ?? rule.expression.length;
+    const nextExpression = `${rule.expression.slice(0, start)}${snippet}${rule.expression.slice(end)}`;
+    onChange({ ...rule, expression: nextExpression });
+
+    requestAnimationFrame(() => {
+      const nextCursor = start + snippet.length;
+      input.focus();
+      input.setSelectionRange(nextCursor, nextCursor);
+    });
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border border-accent/20 bg-accent/5 p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone="accent">{t('editor.custom.beta')}</Badge>
+          <p className="text-xs font-medium text-foreground">{t('editor.custom.help')}</p>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">{t('editor.custom.return_label')}</p>
+      </div>
+
+      <div className="space-y-2">
+        <textarea
+          ref={inputRef}
+          value={rule.expression}
+          onChange={(event) => onChange({ ...rule, expression: event.target.value })}
+          placeholder={t('editor.custom.placeholder')}
+          spellCheck={false}
+          className={cn(
+            'min-h-[120px] w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground outline-none',
+            'font-mono leading-6 placeholder:text-muted-foreground transition-colors',
+            'focus:border-accent/60 focus:ring-2 focus:ring-accent/10',
+          )}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {t('editor.custom.quick_insert')}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {quickInsert.map((snippet) => (
+            <Button
+              key={snippet.value}
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => insertSnippet(snippet.value)}
+              className="font-mono"
+            >
+              {snippet.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {t('editor.custom.examples')}
+        </p>
+        <div className="grid gap-2">
+          {examples.map((example) => (
+            <button
+              key={example.label}
+              type="button"
+              onClick={() => onChange({ ...rule, expression: example.value })}
+              className={cn(
+                'rounded-lg border border-border bg-surface px-3 py-2 text-left transition-colors',
+                'hover:border-accent/40 hover:bg-surface-elevated',
+              )}
+            >
+              <div className="text-xs font-semibold text-foreground">{example.label}</div>
+              <code className="mt-1 block text-[11px] leading-5 text-accent">{example.value}</code>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {t('editor.custom.reference')}
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {CUSTOM_RULE_HELPERS.map((helper) => (
+            <div key={helper} className="rounded-lg border border-border/80 bg-surface px-3 py-2">
+              <code className="text-[11px] text-foreground">{helper}</code>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: RenameRule) => void }) {
   const { t } = useI18n();
   switch (rule.type) {
     case 'new_name':
       return <NewNameRuleEditor rule={rule} onChange={onChange} />;
+
+    case 'custom_rule':
+      return <CustomRuleEditor rule={rule} onChange={onChange} />;
 
     case 'find_replace':
       return (
@@ -2601,17 +2787,17 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
           <div className="flex flex-wrap gap-4">
             <Checkbox
               checked={rule.matchCase}
-              onChange={(e) => onChange({ ...rule, matchCase: e.target.checked })}
+              onCheckedChange={(checked) => onChange({ ...rule, matchCase: checked === true })}
               label={t('editor.match_case')}
             />
             <Checkbox
               checked={rule.useRegex}
-              onChange={(e) => onChange({ ...rule, useRegex: e.target.checked })}
+              onCheckedChange={(checked) => onChange({ ...rule, useRegex: checked === true })}
               label={t('editor.regex')}
             />
             <Checkbox
               checked={rule.replaceAll}
-              onChange={(e) => onChange({ ...rule, replaceAll: e.target.checked })}
+              onCheckedChange={(checked) => onChange({ ...rule, replaceAll: checked === true })}
               label={t('editor.replace_all')}
             />
           </div>
@@ -2638,16 +2824,21 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
       return (
         <Select
           value={rule.mode}
-          onChange={(e) => onChange({ ...rule, mode: e.target.value as typeof rule.mode })}
+          onValueChange={(value) => onChange({ ...rule, mode: value as typeof rule.mode })}
         >
-          <option value="lower">{t('editor.case.lower')}</option>
-          <option value="upper">{t('editor.case.upper')}</option>
-          <option value="title">{t('editor.case.title')}</option>
-          <option value="sentence">{t('editor.case.sentence')}</option>
-          <option value="camel">{t('editor.case.camel')}</option>
-          <option value="pascal">{t('editor.case.pascal')}</option>
-          <option value="kebab">{t('editor.case.kebab')}</option>
-          <option value="snake">{t('editor.case.snake')}</option>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="lower">{t('editor.case.lower')}</SelectItem>
+            <SelectItem value="upper">{t('editor.case.upper')}</SelectItem>
+            <SelectItem value="title">{t('editor.case.title')}</SelectItem>
+            <SelectItem value="sentence">{t('editor.case.sentence')}</SelectItem>
+            <SelectItem value="camel">{t('editor.case.camel')}</SelectItem>
+            <SelectItem value="pascal">{t('editor.case.pascal')}</SelectItem>
+            <SelectItem value="kebab">{t('editor.case.kebab')}</SelectItem>
+            <SelectItem value="snake">{t('editor.case.snake')}</SelectItem>
+          </SelectContent>
         </Select>
       );
 
@@ -2655,15 +2846,20 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
       return (
         <Select
           value={rule.mode}
-          onChange={(e) => onChange({ ...rule, mode: e.target.value as typeof rule.mode })}
+          onValueChange={(value) => onChange({ ...rule, mode: value as typeof rule.mode })}
         >
-          <option value="trim">{t('editor.trim.trim')}</option>
-          <option value="trim_start">{t('editor.trim.trim_start')}</option>
-          <option value="trim_end">{t('editor.trim.trim_end')}</option>
-          <option value="collapse_spaces">{t('editor.trim.collapse_spaces')}</option>
-          <option value="remove_spaces">{t('editor.trim.remove_spaces')}</option>
-          <option value="remove_dashes">{t('editor.trim.remove_dashes')}</option>
-          <option value="remove_underscores">{t('editor.trim.remove_underscores')}</option>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="trim">{t('editor.trim.trim')}</SelectItem>
+            <SelectItem value="trim_start">{t('editor.trim.trim_start')}</SelectItem>
+            <SelectItem value="trim_end">{t('editor.trim.trim_end')}</SelectItem>
+            <SelectItem value="collapse_spaces">{t('editor.trim.collapse_spaces')}</SelectItem>
+            <SelectItem value="remove_spaces">{t('editor.trim.remove_spaces')}</SelectItem>
+            <SelectItem value="remove_dashes">{t('editor.trim.remove_dashes')}</SelectItem>
+            <SelectItem value="remove_underscores">{t('editor.trim.remove_underscores')}</SelectItem>
+          </SelectContent>
         </Select>
       );
 
@@ -2677,7 +2873,7 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
           />
           <Checkbox
             checked={rule.matchCase}
-            onChange={(e) => onChange({ ...rule, matchCase: e.target.checked })}
+            onCheckedChange={(checked) => onChange({ ...rule, matchCase: checked === true })}
             label={t('editor.match_case')}
           />
         </div>
@@ -2688,11 +2884,16 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
         <div className="grid gap-2 sm:grid-cols-2">
           <Select
             value={rule.position}
-            onChange={(e) => onChange({ ...rule, position: e.target.value as typeof rule.position })}
+            onValueChange={(value) => onChange({ ...rule, position: value as typeof rule.position })}
           >
-            <option value="prefix">{t('editor.position.prefix')}</option>
-            <option value="suffix">{t('editor.position.suffix')}</option>
-            <option value="before_extension">{t('editor.position.before_extension')}</option>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="prefix">{t('editor.position.prefix')}</SelectItem>
+              <SelectItem value="suffix">{t('editor.position.suffix')}</SelectItem>
+              <SelectItem value="before_extension">{t('editor.position.before_extension')}</SelectItem>
+            </SelectContent>
           </Select>
           <Input
             value={rule.separator}
@@ -2725,11 +2926,16 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
         <div className="grid gap-2 sm:grid-cols-2">
           <Select
             value={rule.position}
-            onChange={(e) => onChange({ ...rule, position: e.target.value as typeof rule.position })}
+            onValueChange={(value) => onChange({ ...rule, position: value as typeof rule.position })}
           >
-            <option value="prefix">{t('editor.position.prefix')}</option>
-            <option value="suffix">{t('editor.position.suffix')}</option>
-            <option value="before_extension">{t('editor.position.before_extension')}</option>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="prefix">{t('editor.position.prefix')}</SelectItem>
+              <SelectItem value="suffix">{t('editor.position.suffix')}</SelectItem>
+              <SelectItem value="before_extension">{t('editor.position.before_extension')}</SelectItem>
+            </SelectContent>
           </Select>
           <Input
             value={rule.format}
@@ -2749,13 +2955,18 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
         <div className="grid gap-2 sm:grid-cols-2">
           <Select
             value={rule.mode}
-            onChange={(e) => onChange({ ...rule, mode: e.target.value as typeof rule.mode })}
+            onValueChange={(value) => onChange({ ...rule, mode: value as typeof rule.mode })}
           >
-            <option value="keep">{t('editor.extension.keep')}</option>
-            <option value="lowercase">{t('editor.extension.lowercase')}</option>
-            <option value="uppercase">{t('editor.extension.uppercase')}</option>
-            <option value="replace">{t('editor.extension.replace')}</option>
-            <option value="remove">{t('editor.extension.remove')}</option>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="keep">{t('editor.extension.keep')}</SelectItem>
+              <SelectItem value="lowercase">{t('editor.extension.lowercase')}</SelectItem>
+              <SelectItem value="uppercase">{t('editor.extension.uppercase')}</SelectItem>
+              <SelectItem value="replace">{t('editor.extension.replace')}</SelectItem>
+              <SelectItem value="remove">{t('editor.extension.remove')}</SelectItem>
+            </SelectContent>
           </Select>
           {rule.mode === 'replace' && (
             <Input

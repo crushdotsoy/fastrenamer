@@ -7,6 +7,7 @@ import type {
   RenameRule,
   ResolvedRenameItem,
 } from './types';
+import { evaluateCustomRuleExpression } from './custom-rule';
 import { compareNatural } from './sort';
 
 interface NameParts {
@@ -26,6 +27,7 @@ interface RuleContext {
   total: number;
   originalName: string;
   parentPath: string;
+  sourcePath?: string;
 }
 
 const WINDOWS_RESERVED_NAMES = new Set([
@@ -87,6 +89,16 @@ function joinName(parts: NameParts, isDirectory: boolean) {
   }
 
   return `${parts.stem}.${parts.extension}`;
+}
+
+class RenameRuleExecutionError extends Error {
+  currentName: string;
+
+  constructor(message: string, currentName: string) {
+    super(message);
+    this.name = 'RenameRuleExecutionError';
+    this.currentName = currentName;
+  }
 }
 
 function titleCase(value: string) {
@@ -151,6 +163,30 @@ function formatDateToken(now: Date, format: string) {
     .replaceAll('HH', pad(now.getHours()))
     .replaceAll('mm', pad(now.getMinutes()))
     .replaceAll('ss', pad(now.getSeconds()));
+}
+
+function applyTokenAtPosition(
+  parts: NameParts,
+  isDirectory: boolean,
+  position: 'prefix' | 'suffix' | 'before_extension',
+  token: string,
+  separator: string,
+) {
+  const decoratedSuffix = separator ? `${separator}${token}` : token;
+  const decoratedPrefix = separator ? `${token}${separator}` : token;
+
+  if (position === 'prefix') {
+    return splitName(`${decoratedPrefix}${joinName(parts, isDirectory)}`, isDirectory);
+  }
+
+  if (position === 'before_extension') {
+    return {
+      stem: `${parts.stem}${decoratedSuffix}`,
+      extension: parts.extension,
+    };
+  }
+
+  return splitName(`${joinName(parts, isDirectory)}${decoratedSuffix}`, isDirectory);
 }
 
 function formatSequenceToken(index: number, argument?: string) {
@@ -218,6 +254,30 @@ export function applyRulesToName(
       case 'new_name':
         parts.stem = renderNewNameTemplate(rule.template, parts, originalName, isDirectory, context, now);
         break;
+      case 'custom_rule': {
+        try {
+          const originalParts = splitName(originalName, isDirectory);
+          const nextName = evaluateCustomRuleExpression(rule.expression, {
+            currentName: joinName(parts, isDirectory),
+            currentStem: parts.stem,
+            extension: parts.extension,
+            originalName,
+            originalStem: originalParts.stem,
+            originalExtension: originalParts.extension,
+            parent: path.basename(context.parentPath),
+            sourcePath: context.sourcePath ?? path.join(context.parentPath, originalName),
+            isDirectory,
+            index: context.index + 1,
+            zeroIndex: context.index,
+            total: context.total,
+          });
+          parts = splitName(nextName, isDirectory);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Custom rule failed.';
+          throw new RenameRuleExecutionError(`Custom rule failed: ${message}`, joinName(parts, isDirectory));
+        }
+        break;
+      }
       case 'find_replace': {
         if (!rule.find) {
           break;
@@ -303,22 +363,12 @@ export function applyRulesToName(
       case 'sequence_insert': {
         const rawNumber = rule.start + context.index * rule.step;
         const sequence = String(rawNumber).padStart(rule.padWidth, '0');
-        const token = rule.separator ? `${sequence}${rule.separator}` : sequence;
-        if (rule.position === 'prefix') {
-          parts.stem = `${token}${parts.stem}`;
-        } else {
-          parts.stem = `${parts.stem}${rule.separator}${sequence}`;
-        }
+        parts = applyTokenAtPosition(parts, isDirectory, rule.position, sequence, rule.separator);
         break;
       }
       case 'date_time': {
         const token = formatDateToken(now, rule.format);
-        const decorated = rule.separator ? `${token}${rule.separator}` : token;
-        if (rule.position === 'prefix') {
-          parts.stem = `${decorated}${parts.stem}`;
-        } else {
-          parts.stem = `${parts.stem}${rule.separator}${token}`;
-        }
+        parts = applyTokenAtPosition(parts, isDirectory, rule.position, token, rule.separator);
         break;
       }
       case 'extension_handling':
@@ -430,16 +480,30 @@ export function generatePreview(options: PreviewBuildOptions): PreviewResult {
   };
 
   orderedItems.forEach((item, index) => {
-    const proposedName = applyRulesToName(item.name, item.isDirectory, rules, {
-      index,
-      total: orderedItems.length,
-      originalName: item.name,
-      parentPath: item.parentPath,
-    });
+    let proposedName = item.name;
+    const executionReasons: string[] = [];
+
+    try {
+      proposedName = applyRulesToName(item.name, item.isDirectory, rules, {
+        index,
+        total: orderedItems.length,
+        originalName: item.name,
+        parentPath: item.parentPath,
+        sourcePath: item.sourcePath,
+      });
+    } catch (error) {
+      if (error instanceof RenameRuleExecutionError) {
+        proposedName = error.currentName;
+        executionReasons.push(error.message);
+      } else {
+        throw error;
+      }
+    }
+
     const finalDirectoryPath = resolveFinalDirectoryPath(item);
     const nextPath = path.join(finalDirectoryPath, proposedName);
     const changed = item.sourcePath !== nextPath;
-    const reasons = validateName(proposedName, platform, item.isDirectory);
+    const reasons = [...executionReasons, ...validateName(proposedName, platform, item.isDirectory)];
     const rowId = normalizePathKey(item.sourcePath, platform);
     if (reasons.length > 0) {
       invalidIds.add(rowId);
