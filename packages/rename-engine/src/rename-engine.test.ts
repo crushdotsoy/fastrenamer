@@ -104,6 +104,7 @@ describe('generatePreview', () => {
           isDirectory: false,
         },
       ],
+      sortMode: 'natural_path',
       rules: [
         {
           id: 'seq',
@@ -125,6 +126,151 @@ describe('generatePreview', () => {
       '2_file2.txt',
       '3_file10.txt',
     ]);
+  });
+
+  it('uses alphabetic path sort order for sequence numbering', () => {
+    const preview = generatePreview({
+      items: [
+        {
+          sourcePath: '/tmp/file2.txt',
+          name: 'file2.txt',
+          parentPath: '/tmp',
+          isDirectory: false,
+        },
+        {
+          sourcePath: '/tmp/file10.txt',
+          name: 'file10.txt',
+          parentPath: '/tmp',
+          isDirectory: false,
+        },
+      ],
+      sortMode: 'alphabetic_path',
+      rules: [
+        {
+          id: 'seq',
+          type: 'sequence_insert',
+          enabled: true,
+          position: 'prefix',
+          start: 1,
+          step: 1,
+          padWidth: 0,
+          separator: '_',
+        },
+      ],
+      platform: 'linux',
+      existingPathExists: () => false,
+    });
+
+    expect(preview.rows.map((row) => row.proposedName)).toEqual([
+      '1_file10.txt',
+      '2_file2.txt',
+    ]);
+  });
+
+  it('sorts by file name before parent path in name-only mode', () => {
+    const preview = generatePreview({
+      items: [
+        {
+          sourcePath: '/tmp/zeta/report-2.txt',
+          name: 'report-2.txt',
+          parentPath: '/tmp/zeta',
+          isDirectory: false,
+        },
+        {
+          sourcePath: '/tmp/alpha/report-10.txt',
+          name: 'report-10.txt',
+          parentPath: '/tmp/alpha',
+          isDirectory: false,
+        },
+        {
+          sourcePath: '/tmp/alpha/report-2.txt',
+          name: 'report-2.txt',
+          parentPath: '/tmp/alpha',
+          isDirectory: false,
+        },
+      ],
+      sortMode: 'name_only',
+      rules: [],
+      platform: 'linux',
+      existingPathExists: () => false,
+    });
+
+    expect(preview.rows.map((row) => row.sourcePath)).toEqual([
+      '/tmp/alpha/report-2.txt',
+      '/tmp/zeta/report-2.txt',
+      '/tmp/alpha/report-10.txt',
+    ]);
+  });
+
+  it('groups rows by folder before name in folder-then-name mode', () => {
+    const preview = generatePreview({
+      items: [
+        {
+          sourcePath: '/tmp/beta/file-2.txt',
+          name: 'file-2.txt',
+          parentPath: '/tmp/beta',
+          isDirectory: false,
+        },
+        {
+          sourcePath: '/tmp/alpha/file-9.txt',
+          name: 'file-9.txt',
+          parentPath: '/tmp/alpha',
+          isDirectory: false,
+        },
+        {
+          sourcePath: '/tmp/alpha/file-10.txt',
+          name: 'file-10.txt',
+          parentPath: '/tmp/alpha',
+          isDirectory: false,
+        },
+      ],
+      sortMode: 'folder_then_name',
+      rules: [],
+      platform: 'linux',
+      existingPathExists: () => false,
+    });
+
+    expect(preview.rows.map((row) => row.sourcePath)).toEqual([
+      '/tmp/alpha/file-9.txt',
+      '/tmp/alpha/file-10.txt',
+      '/tmp/beta/file-2.txt',
+    ]);
+  });
+
+  it('keeps ancestor directories ahead of descendants in name-only mode', () => {
+    const preview = generatePreview({
+      items: [
+        {
+          sourcePath: '/tmp/Parent Folder/child.txt',
+          name: 'child.txt',
+          parentPath: '/tmp/Parent Folder',
+          isDirectory: false,
+        },
+        {
+          sourcePath: '/tmp/Parent Folder',
+          name: 'Parent Folder',
+          parentPath: '/tmp',
+          isDirectory: true,
+        },
+      ],
+      sortMode: 'name_only',
+      rules: [
+        {
+          id: 'case',
+          type: 'case_transform',
+          enabled: true,
+          mode: 'snake',
+        },
+      ],
+      platform: 'linux',
+      existingPathExists: () => false,
+    });
+
+    expect(preview.rows.map((row) => row.sourcePath)).toEqual([
+      '/tmp/Parent Folder',
+      '/tmp/Parent Folder/child.txt',
+    ]);
+    expect(preview.rows[1].finalDirectoryPath).toBe('/tmp/parent_folder');
   });
 
   it('resolves nested child targets under renamed parent directories', () => {
@@ -162,6 +308,7 @@ describe('generatePreview', () => {
 
     const preview = generatePreview({
       items,
+      sortMode: 'natural_path',
       rules,
       platform: 'linux',
       existingPathExists: () => false,
@@ -193,6 +340,7 @@ describe('generatePreview', () => {
 
     const preview = generatePreview({
       items,
+      sortMode: 'natural_path',
       rules: [
         {
           id: 'replace',
@@ -234,6 +382,7 @@ describe('generatePreview', () => {
           isDirectory: false,
         },
       ],
+      sortMode: 'natural_path',
       rules: [
         {
           id: 'custom',
@@ -263,6 +412,7 @@ describe('generatePreview', () => {
 
     const suffixPreview = generatePreview({
       items: [item],
+      sortMode: 'natural_path',
       rules: [
         {
           id: 'suffix',
@@ -281,6 +431,7 @@ describe('generatePreview', () => {
 
     const beforeExtensionPreview = generatePreview({
       items: [item],
+      sortMode: 'natural_path',
       rules: [
         {
           id: 'before-extension',
@@ -311,6 +462,7 @@ describe('generatePreview', () => {
           isDirectory: false,
         },
       ],
+      sortMode: 'natural_path',
       rules: [
         {
           id: 'lower',

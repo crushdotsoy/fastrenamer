@@ -39,8 +39,10 @@ import type {
   PreviewResult,
   SourceMode,
   RenameRule,
+  SortMode,
   SourceSelection,
 } from '@fast-renamer/rename-engine';
+import { sortItemsByMode } from '@fast-renamer/rename-engine';
 import type { UpdateState, WindowState } from '@shared/contracts';
 import {
   Badge,
@@ -112,6 +114,13 @@ const SOURCE_MODE_OPTIONS: SourceMode[] = [
   'files_recursive',
 ];
 
+const SORT_MODE_OPTIONS: SortMode[] = [
+  'natural_path',
+  'alphabetic_path',
+  'name_only',
+  'folder_then_name',
+];
+
 const RULE_TYPE_ORDER: RenameRule['type'][] = [
   'new_name',
   'custom_rule',
@@ -166,6 +175,15 @@ function getSourceModeMeta(t: ReturnType<typeof useI18n>['t']): Record<
       detail: t('source.mode.files_recursive.detail'),
       supportsFilter: true,
     },
+  };
+}
+
+function getSortModeMeta(t: ReturnType<typeof useI18n>['t']): Record<SortMode, { label: string }> {
+  return {
+    natural_path: { label: t('sources.sort_mode.natural_path') },
+    alphabetic_path: { label: t('sources.sort_mode.alphabetic_path') },
+    name_only: { label: t('sources.sort_mode.name_only') },
+    folder_then_name: { label: t('sources.sort_mode.folder_then_name') },
   };
 }
 
@@ -263,11 +281,8 @@ const CUSTOM_RULE_HELPERS = [
   'ext(value)',
 ] as const;
 
-const SOURCE_LIST_COLLATOR = new Intl.Collator(undefined, {
-  numeric: true,
-  sensitivity: 'base',
-});
 const LEFT_WIDTH_STORAGE_KEY = 'left_panel_width';
+const SORT_MODE_STORAGE_KEY = 'source_sort_mode';
 const DEFAULT_LEFT_WIDTH_RATIO = 0.28;
 const MAX_LEFT_WIDTH_RATIO = 0.45;
 const MIN_LEFT_PANEL_WIDTH_PX = 453;
@@ -346,8 +361,8 @@ function reorderRule(rules: RenameRule[], draggedRuleId: string, targetRuleId: s
   return next;
 }
 
-function sortSourceSelections(sources: SourceSelection[]) {
-  return [...sources].sort((left, right) => SOURCE_LIST_COLLATOR.compare(left.path, right.path));
+function sortSourceSelections(sources: SourceSelection[], sortMode: SortMode) {
+  return sortItemsByMode(sources, sortMode);
 }
 
 const THEME_TOKEN_CSS_VARIABLES: Record<ThemeTokenKey, string> = {
@@ -827,6 +842,7 @@ export function App() {
   const { locale, setLocale, t } = useI18n();
   const platform = useMemo(detectPlatform, []);
   const sourceModeMeta = useMemo(() => getSourceModeMeta(t), [t]);
+  const sortModeMeta = useMemo(() => getSortModeMeta(t), [t]);
   const {
     theme,
     themes,
@@ -842,6 +858,15 @@ export function App() {
   const [sources, setSources] = useState<SourceSelection[]>([]);
   const [sourceMode, setSourceMode] = useState<SourceMode>('picked_files');
   const [fileNamePattern, setFileNamePattern] = useState('');
+  const [sortMode, setSortMode] = useState<SortMode>(() => {
+    const stored = localStorage.getItem(SORT_MODE_STORAGE_KEY);
+    return stored === 'natural_path' ||
+      stored === 'alphabetic_path' ||
+      stored === 'name_only' ||
+      stored === 'folder_then_name'
+      ? stored
+      : 'natural_path';
+  });
   const [rules, setRules] = useState<RenameRule[]>([]);
   const [preview, setPreview] = useState<PreviewResult>(DEFAULT_PREVIEW);
   const [statusFilters, setStatusFilters] = useState<StatusFilter[]>([...STATUS_OPTIONS]);
@@ -859,9 +884,11 @@ export function App() {
   const [selectedPresetId, setSelectedPresetId] = useState<number | null>(null);
   const [draftSourceMode, setDraftSourceMode] = useState<SourceMode>(sourceMode);
   const [draftFileNamePattern, setDraftFileNamePattern] = useState(fileNamePattern);
+  const [draftSortMode, setDraftSortMode] = useState<SortMode>(sortMode);
   const [pendingSourcePick, setPendingSourcePick] = useState<{
     mode: SourceMode;
     fileNamePattern: string;
+    sortMode: SortMode;
   } | null>(null);
   const [pendingDroppedSources, setPendingDroppedSources] = useState<SourceSelection[] | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -893,8 +920,12 @@ export function App() {
 
   const sourcePaths = useMemo(() => sources.map((s) => s.path), [sources]);
   const previewRequest = useMemo(
-    () => ({ sourcePaths, sourceMode, fileNamePattern, rules, platform }),
-    [fileNamePattern, platform, rules, sourceMode, sourcePaths],
+    () => ({ sourcePaths, sourceMode, fileNamePattern, sortMode, rules, platform }),
+    [fileNamePattern, platform, rules, sortMode, sourceMode, sourcePaths],
+  );
+  const sortedSourceDialogItems = useMemo(
+    () => sortSourceSelections(pendingDroppedSources ?? sources, draftSortMode),
+    [draftSortMode, pendingDroppedSources, sources],
   );
 
   useEffect(() => { void reloadMetadata(); }, []);
@@ -918,8 +949,9 @@ export function App() {
         setError(null);
         setSourceMode(nextPick.mode);
         setFileNamePattern(nextPick.fileNamePattern);
+        setSortMode(nextPick.sortMode);
         const picked = await window.advancedRenamer.pickSources({ mode: nextPick.mode });
-        setSources(sortSourceSelections(picked));
+        setSources(sortSourceSelections(picked, nextPick.sortMode));
       } catch (err) {
         setError(err instanceof Error ? err.message : t('error.source_picker'));
       }
@@ -959,6 +991,11 @@ export function App() {
   useEffect(() => {
     localStorage.setItem(LEFT_WIDTH_STORAGE_KEY, String(leftWidthRatio));
   }, [leftWidthRatio]);
+
+  useEffect(() => {
+    localStorage.setItem(SORT_MODE_STORAGE_KEY, sortMode);
+    setSources((current) => sortSourceSelections(current, sortMode));
+  }, [sortMode]);
 
   useEffect(() => {
     let mounted = true;
@@ -1080,6 +1117,7 @@ export function App() {
     setPendingDroppedSources(null);
     setDraftSourceMode(sourceMode);
     setDraftFileNamePattern(fileNamePattern);
+    setDraftSortMode(sortMode);
     setAddSourcesOpen(true);
   }
 
@@ -1158,7 +1196,8 @@ export function App() {
       setError(null);
       setSourceMode(draftSourceMode);
       setFileNamePattern(draftFileNamePattern);
-      setSources(sortSourceSelections(nextSources));
+      setSortMode(draftSortMode);
+      setSources(sortSourceSelections(nextSources, draftSortMode));
       setPendingDroppedSources(null);
       setAddSourcesOpen(false);
       return;
@@ -1167,6 +1206,7 @@ export function App() {
     setPendingSourcePick({
       mode: draftSourceMode,
       fileNamePattern: draftFileNamePattern,
+      sortMode: draftSortMode,
     });
     setAddSourcesOpen(false);
   }
@@ -1182,6 +1222,7 @@ export function App() {
     if (pendingDroppedSources) {
       const nextSources = sortSourceSelections(
         pendingDroppedSources.filter((source) => source.path !== sourcePath),
+        draftSortMode,
       );
       setPendingDroppedSources(nextSources);
 
@@ -1203,7 +1244,7 @@ export function App() {
       return;
     }
 
-    setSources((current) => sortSourceSelections(current.filter((source) => source.path !== sourcePath)));
+    setSources((current) => sortSourceSelections(current.filter((source) => source.path !== sourcePath), sortMode));
   }
 
   async function handleDrop(event: DragEvent<HTMLDivElement>) {
@@ -1231,7 +1272,7 @@ export function App() {
       if (!hasDirectories) {
         setSourceMode('picked_files');
         setFileNamePattern('');
-        setSources(sortSourceSelections(resolved));
+        setSources(sortSourceSelections(resolved, sortMode));
         return;
       }
 
@@ -1244,9 +1285,10 @@ export function App() {
           ? 'files_recursive'
           : availableModes[0];
 
-      setPendingDroppedSources(sortSourceSelections(resolved));
+      setPendingDroppedSources(sortSourceSelections(resolved, sortMode));
       setDraftSourceMode(nextDefaultMode);
       setDraftFileNamePattern('');
+      setDraftSortMode(sortMode);
       setAddSourcesOpen(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error.read_dropped'));
@@ -1318,7 +1360,6 @@ export function App() {
   const availableDraftModes = pendingDroppedSources
     ? getAvailableSourceModes(pendingDroppedSources)
     : SOURCE_MODE_OPTIONS;
-  const sourceDialogItems = pendingDroppedSources ?? sources;
   const sourceDialogTitle = pendingDroppedSources ? t('sources.add.dropped_title') : t('sources.add.title');
   const sourceDialogDescription = pendingDroppedSources
     ? t('sources.add.dropped_description')
@@ -1469,7 +1510,7 @@ export function App() {
         description={sourceDialogDescription}
       >
         <div className="space-y-5 p-5">
-          <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             <div className="space-y-2">
               <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {t('sources.set')}
@@ -1521,6 +1562,28 @@ export function App() {
                   : t('sources.filter.help_unsupported')}
               </p>
             </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {t('sources.sort')}
+              </label>
+              <Select
+                value={draftSortMode}
+                onValueChange={(value) => setDraftSortMode(value as SortMode)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_MODE_OPTIONS.map((mode) => (
+                    <SelectItem key={mode} value={mode}>
+                      {sortModeMeta[mode].label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{t('sources.sort.help')}</p>
+            </div>
           </div>
 
           <div className="rounded-xl border border-border bg-surface p-4">
@@ -1529,12 +1592,13 @@ export function App() {
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <Badge dot tone="accent">{sourceModeMeta[draftSourceMode].label}</Badge>
+              <Badge dot>{t('sources.sort.badge', { mode: sortModeMeta[draftSortMode].label })}</Badge>
               {draftFileNamePattern ? <Badge dot>{draftFileNamePattern}</Badge> : null}
               <Badge dot>{t('sources.roots', { count: sourceDialogRootCount })}</Badge>
             </div>
-            {sourceDialogItems.length > 0 && (
+            {sortedSourceDialogItems.length > 0 && (
               <div className="mt-3 max-h-40 space-y-2 overflow-y-auto">
-                {sourceDialogItems.map((source) => (
+                {sortedSourceDialogItems.map((source) => (
                   <div
                     key={source.path}
                     className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-card/70 px-3 py-2"

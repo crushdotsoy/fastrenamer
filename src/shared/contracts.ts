@@ -10,6 +10,7 @@ import type {
   PreviewRequest,
   PreviewResult,
   RenameRule,
+  SortMode,
   SourceMode,
   SourceSelection,
   UndoRenameBatchRequest,
@@ -95,6 +96,12 @@ const sourceModeSchema = z.enum([
   'top_level_files',
   'files_recursive',
 ]) satisfies z.ZodType<SourceMode>;
+const sortModeSchema = z.enum([
+  'natural_path',
+  'alphabetic_path',
+  'name_only',
+  'folder_then_name',
+]) satisfies z.ZodType<SortMode>;
 
 export const pickSourcesRequestSchema = z.object({
   mode: sourceModeSchema,
@@ -104,6 +111,7 @@ export const previewRequestSchema = z.object({
   sourcePaths: z.array(z.string().min(1)),
   sourceMode: sourceModeSchema,
   fileNamePattern: z.string(),
+  sortMode: sortModeSchema,
   rules: z.array(renameRuleSchema),
   platform: platformSchema,
 }) satisfies z.ZodType<PreviewRequest>;

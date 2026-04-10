@@ -6,9 +6,10 @@ import type {
   PreviewRow,
   RenameRule,
   ResolvedRenameItem,
+  SortMode,
 } from './types';
 import { evaluateCustomRuleExpression } from './custom-rule';
-import { compareNatural } from './sort';
+import { sortItemsByMode } from './sort';
 
 interface NameParts {
   stem: string;
@@ -19,6 +20,7 @@ interface PreviewBuildOptions {
   items: ResolvedRenameItem[];
   rules: RenameRule[];
   platform: PlatformTarget;
+  sortMode: SortMode;
   existingPathExists?: (candidatePath: string) => boolean;
 }
 
@@ -432,7 +434,7 @@ function validateName(name: string, platform: PlatformTarget, isDirectory: boole
 }
 
 export function generatePreview(options: PreviewBuildOptions): PreviewResult {
-  const { items, rules, platform, existingPathExists } = options;
+  const { items, rules, platform, sortMode, existingPathExists } = options;
   const rowMap = new Map<string, PreviewRow>();
   const sourceKeys = new Set<string>();
   const existingCache = new Map<string, boolean>();
@@ -440,7 +442,7 @@ export function generatePreview(options: PreviewBuildOptions): PreviewResult {
   const invalidIds = new Set<string>();
   const conflictIds = new Set<string>();
 
-  const orderedItems = [...items].sort((left, right) => compareNatural(left.sourcePath, right.sourcePath));
+  const orderedItems = sortItemsByMode(items, sortMode);
 
   for (const item of orderedItems) {
     const sourceKey = normalizePathKey(item.sourcePath, platform);

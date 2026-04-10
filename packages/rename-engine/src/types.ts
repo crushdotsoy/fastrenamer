@@ -1,4 +1,5 @@
 export type PlatformTarget = 'darwin' | 'win32' | 'linux';
+export type SortMode = 'natural_path' | 'alphabetic_path' | 'name_only' | 'folder_then_name';
 
 export type RenameRule =
   | NewNameRule
@@ -118,6 +119,7 @@ export interface PreviewRequest {
   sourcePaths: string[];
   sourceMode: SourceMode;
   fileNamePattern: string;
+  sortMode: SortMode;
   rules: RenameRule[];
   platform: PlatformTarget;
 }

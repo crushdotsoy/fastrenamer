@@ -30,6 +30,7 @@ describe('generatePreviewForRequest source modes', () => {
       sourcePaths: [tempRoot],
       sourceMode: 'top_level_files',
       fileNamePattern: '',
+      sortMode: 'natural_path',
       rules: [],
       platform: 'linux',
       ...overrides,
@@ -95,5 +96,38 @@ describe('generatePreviewForRequest source modes', () => {
 
     expect(preview.rows.map((row) => row.originalName)).toEqual(['Sub A1', 'Nested', 'Deep']);
     expect(preview.rows.every((row) => row.isDirectory)).toBe(true);
+  });
+
+  it('respects custom sort modes in preview row order', async () => {
+    const preview = await generatePreviewForRequest(
+      baseRequest({
+        sourceMode: 'files_recursive',
+        sortMode: 'name_only',
+      }),
+    );
+
+    expect(preview.rows.map((row) => row.originalName)).toEqual([
+      'inside-a.tif',
+      'inside-a.txt',
+      'nested-a.tif',
+      'nested-b.tif',
+      'top-one.tif',
+      'top-two.jpg',
+    ]);
+  });
+
+  it('uses alphabetic path sorting when requested', async () => {
+    await fs.writeFile(path.join(tempRoot, 'file2.txt'), 'two');
+    await fs.writeFile(path.join(tempRoot, 'file10.txt'), 'ten');
+
+    const preview = await generatePreviewForRequest(
+      baseRequest({
+        sourceMode: 'top_level_files',
+        fileNamePattern: '*.txt',
+        sortMode: 'alphabetic_path',
+      }),
+    );
+
+    expect(preview.rows.map((row) => row.originalName)).toEqual(['file10.txt', 'file2.txt']);
   });
 });

@@ -5,6 +5,7 @@ import {
   compareNatural,
   generatePreview,
   normalizePathKey,
+  sortItemsByMode,
 } from '@fast-renamer/rename-engine';
 import type {
   ExecuteRenameBatchRequest,
@@ -179,7 +180,7 @@ async function resolveSourceItems(request: PreviewRequest): Promise<ResolvedRena
     }
   }
 
-  return items.sort((left, right) => compareNatural(left.sourcePath, right.sourcePath));
+  return sortItemsByMode(items, request.sortMode);
 }
 
 function compileFilePatterns(input: string) {
@@ -208,6 +209,7 @@ export async function generatePreviewForRequest(request: PreviewRequest): Promis
     items,
     rules: request.rules,
     platform: request.platform,
+    sortMode: request.sortMode,
     existingPathExists: (candidatePath) => fs.existsSync(candidatePath),
   });
 }
