@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.0 - 2026-04-10
+
 ### Added
 
 - Custom Rule beta for safe inline expression-based renaming inside the existing rule stack
