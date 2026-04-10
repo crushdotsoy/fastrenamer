@@ -35,7 +35,6 @@ export default defineConfig(({ mode }) => ({
                 preload: 'electron/preload.ts',
               },
             },
-            renderer: {},
           }),
         ]),
   ],
