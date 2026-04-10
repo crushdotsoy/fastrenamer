@@ -1,9 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { app, BrowserWindow } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import electronUpdater from 'electron-updater';
 import type { ProgressInfo, UpdateDownloadedEvent, UpdateInfo } from 'electron-updater';
 import type { UpdateState } from '../src/shared/contracts';
+
+const { autoUpdater } = electronUpdater;
 
 const UPDATE_CHECK_INTERVAL_MS = 1000 * 60 * 60 * 6;
 const GITHUB_RELEASES_URL = 'https://github.com/crushdotsoy/fastrenamer/releases';
