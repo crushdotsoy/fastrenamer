@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => ({
               vite: {
                 build: {
                   rollupOptions: {
-                    external: ['node:sqlite'],
+                    external: ['node:sqlite', 'electron-updater'],
                   },
                 },
               },
