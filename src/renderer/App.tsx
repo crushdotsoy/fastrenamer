@@ -1412,6 +1412,8 @@ export function App() {
             windowState={windowState}
             sourceCount={sources.length}
             selectedLabel={getSelectedLabel(sources, t)}
+            sortMode={sortMode}
+            sortModeMeta={sortModeMeta}
             preview={preview}
             busy={busy}
             error={error}
@@ -1426,6 +1428,7 @@ export function App() {
             onOpenHistory={() => setHistoryDrawerOpen(true)}
             onOpenSettings={() => setSettingsDrawerOpen(true)}
             onSelectTheme={setTheme}
+            onChangeSortMode={setSortMode}
             onMinimizeWindow={() => void window.advancedRenamer.minimizeWindow()}
             onToggleMaximizeWindow={() =>
               void window.advancedRenamer.toggleMaximizeWindow().then(setWindowState)
@@ -2034,6 +2037,8 @@ function TopBar({
   windowState,
   sourceCount,
   selectedLabel,
+  sortMode,
+  sortModeMeta,
   preview,
   busy,
   error,
@@ -2048,6 +2053,7 @@ function TopBar({
   onOpenHistory,
   onOpenSettings,
   onSelectTheme,
+  onChangeSortMode,
   onMinimizeWindow,
   onToggleMaximizeWindow,
   onCloseWindow,
@@ -2058,6 +2064,8 @@ function TopBar({
   windowState: WindowState;
   sourceCount: number;
   selectedLabel: string;
+  sortMode: SortMode;
+  sortModeMeta: Record<SortMode, { label: string }>;
   preview: PreviewResult;
   busy: 'idle' | 'preview' | 'execute' | 'undo';
   error: string | null;
@@ -2072,6 +2080,7 @@ function TopBar({
   onOpenHistory: () => void;
   onOpenSettings: () => void;
   onSelectTheme: (themeId: string) => void;
+  onChangeSortMode: (mode: SortMode) => void;
   onMinimizeWindow: () => void;
   onToggleMaximizeWindow: () => void;
   onCloseWindow: () => void;
@@ -2137,6 +2146,26 @@ function TopBar({
 
         {/* Action buttons */}
         <div className="app-no-drag flex items-center gap-1.5">
+          <div className="hidden lg:flex items-center gap-2 rounded-lg border border-border bg-surface/70 px-2 py-1">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {t('sources.sort')}
+            </span>
+            <Select value={sortMode} onValueChange={(value) => onChangeSortMode(value as SortMode)}>
+              <SelectTrigger className="h-8 w-[170px] border-border/70 bg-card/80 px-2.5 text-xs shadow-none">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {SORT_MODE_OPTIONS.map((mode) => (
+                  <SelectItem key={mode} value={mode}>
+                    {sortModeMeta[mode].label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="h-6 w-px bg-border mx-0.5 hidden lg:block" />
+
           <Tooltip content={t('topbar.refresh_preview')}>
             <IconButton
               disabled={busy !== 'idle' || sourceCount === 0}
