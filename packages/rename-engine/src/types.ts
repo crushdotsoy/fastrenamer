@@ -10,6 +10,7 @@ export type RenameRule =
   | TrimTextRule
   | RemoveTextRule
   | SequenceInsertRule
+  | LetterSequenceInsertRule
   | DateTimeRule
   | ExtensionHandlingRule;
 
@@ -73,6 +74,15 @@ export interface SequenceInsertRule extends BaseRule {
   start: number;
   step: number;
   padWidth: number;
+  separator: string;
+}
+
+export interface LetterSequenceInsertRule extends BaseRule {
+  type: 'letter_sequence_insert';
+  position: 'prefix' | 'suffix' | 'before_extension';
+  start: number;
+  step: number;
+  casing: 'upper' | 'lower';
   separator: string;
 }
 

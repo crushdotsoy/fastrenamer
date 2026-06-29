@@ -75,6 +75,14 @@ const renameRuleSchema = z.discriminatedUnion('type', [
     separator: z.string(),
   }),
   baseRuleSchema.extend({
+    type: z.literal('letter_sequence_insert'),
+    position: z.enum(['prefix', 'suffix', 'before_extension']),
+    start: z.number().int().min(1),
+    step: z.number().int().min(1),
+    casing: z.enum(['upper', 'lower']),
+    separator: z.string(),
+  }),
+  baseRuleSchema.extend({
     type: z.literal('date_time'),
     position: z.enum(['prefix', 'suffix', 'before_extension']),
     format: z.string(),

@@ -202,6 +202,21 @@ function formatSequenceToken(index: number, argument?: string) {
   return padWidth > 0 ? String(nextValue).padStart(padWidth, '0') : String(nextValue);
 }
 
+function formatLetterSequence(value: number, casing: 'upper' | 'lower') {
+  const alphabetStart = casing === 'upper' ? 65 : 97;
+  const normalizedValue = Math.max(1, Math.floor(value));
+  let remaining = normalizedValue;
+  let sequence = '';
+
+  while (remaining > 0) {
+    remaining -= 1;
+    sequence = String.fromCharCode(alphabetStart + (remaining % 26)) + sequence;
+    remaining = Math.floor(remaining / 26);
+  }
+
+  return sequence;
+}
+
 function renderNewNameTemplate(
   template: string,
   currentParts: NameParts,
@@ -365,6 +380,12 @@ export function applyRulesToName(
       case 'sequence_insert': {
         const rawNumber = rule.start + context.index * rule.step;
         const sequence = String(rawNumber).padStart(rule.padWidth, '0');
+        parts = applyTokenAtPosition(parts, isDirectory, rule.position, sequence, rule.separator);
+        break;
+      }
+      case 'letter_sequence_insert': {
+        const rawNumber = rule.start + context.index * rule.step;
+        const sequence = formatLetterSequence(rawNumber, rule.casing);
         parts = applyTokenAtPosition(parts, isDirectory, rule.position, sequence, rule.separator);
         break;
       }
