@@ -130,6 +130,7 @@ const RULE_TYPE_ORDER: RenameRule['type'][] = [
   'trim_text',
   'remove_text',
   'sequence_insert',
+  'letter_sequence_insert',
   'date_time',
   'extension_handling',
 ];
@@ -200,6 +201,7 @@ function getRuleMeta(t: ReturnType<typeof useI18n>['t']): Record<
     trim_text: { label: t('rule.trim_text'), color: '#2dd4bf', icon: Scissors },
     remove_text: { label: t('rule.remove_text'), color: '#f87171', icon: Eraser },
     sequence_insert: { label: t('rule.sequence_insert'), color: '#fb923c', icon: Hash },
+    letter_sequence_insert: { label: t('rule.letter_sequence_insert'), color: '#f59e0b', icon: Type },
     date_time: { label: t('rule.date_time'), color: '#fbbf24', icon: Calendar },
     extension_handling: { label: t('rule.extension_handling'), color: '#e879f9', icon: FileCode },
   };
@@ -330,6 +332,8 @@ function createRule(type: RenameRule['type']): RenameRule {
       return { id, type, enabled: true, text: '', matchCase: false };
     case 'sequence_insert':
       return { id, type, enabled: true, position: 'prefix', start: 1, step: 1, padWidth: 3, separator: '_' };
+    case 'letter_sequence_insert':
+      return { id, type, enabled: true, position: 'prefix', start: 1, step: 1, casing: 'upper', separator: '_' };
     case 'date_time':
       return { id, type, enabled: true, position: 'suffix', format: 'YYYY-MM-DD', separator: '_' };
     case 'extension_handling':
@@ -3010,6 +3014,56 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
             value={rule.padWidth}
             onChange={(e) => onChange({ ...rule, padWidth: Number(e.target.value) })}
             placeholder={t('editor.pad.placeholder')}
+          />
+        </div>
+      );
+
+    case 'letter_sequence_insert':
+      return (
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Select
+            value={rule.position}
+            onValueChange={(value) => onChange({ ...rule, position: value as typeof rule.position })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="prefix">{t('editor.position.prefix')}</SelectItem>
+              <SelectItem value="suffix">{t('editor.position.suffix')}</SelectItem>
+              <SelectItem value="before_extension">{t('editor.position.before_extension')}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={rule.casing}
+            onValueChange={(value) => onChange({ ...rule, casing: value as typeof rule.casing })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="upper">{t('editor.letter_case.upper')}</SelectItem>
+              <SelectItem value="lower">{t('editor.letter_case.lower')}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            value={rule.separator}
+            onChange={(e) => onChange({ ...rule, separator: e.target.value })}
+            placeholder={t('editor.separator.placeholder')}
+          />
+          <Input
+            type="number"
+            min={1}
+            value={rule.start}
+            onChange={(e) => onChange({ ...rule, start: Math.max(1, Number(e.target.value) || 1) })}
+            placeholder={t('editor.start.placeholder')}
+          />
+          <Input
+            type="number"
+            min={1}
+            value={rule.step}
+            onChange={(e) => onChange({ ...rule, step: Math.max(1, Number(e.target.value) || 1) })}
+            placeholder={t('editor.step.placeholder')}
           />
         </div>
       );

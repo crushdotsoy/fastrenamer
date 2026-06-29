@@ -39,6 +39,7 @@ export const en = {
   'rule.trim_text': 'Trim / Normalize',
   'rule.remove_text': 'Remove Text',
   'rule.sequence_insert': 'Sequence',
+  'rule.letter_sequence_insert': 'Letter Sequence',
   'rule.date_time': 'Date / Time',
   'rule.extension_handling': 'Extension',
 
@@ -153,6 +154,8 @@ export const en = {
   'editor.start.placeholder': 'Start',
   'editor.step.placeholder': 'Step',
   'editor.pad.placeholder': 'Pad width',
+  'editor.letter_case.upper': 'A, B, C',
+  'editor.letter_case.lower': 'a, b, c',
   'editor.date_format.placeholder': 'YYYY-MM-DD',
   'editor.extension.keep': 'Keep as-is',
   'editor.extension.lowercase': 'Lowercase',

@@ -59,6 +59,38 @@ describe('applyRulesToName', () => {
     ).toBe('name_0002_Report Final.txt');
   });
 
+  it('inserts spreadsheet-style letter sequences', () => {
+    const rules: RenameRule[] = [
+      {
+        id: 'letters',
+        type: 'letter_sequence_insert',
+        enabled: true,
+        position: 'prefix',
+        start: 26,
+        step: 1,
+        casing: 'upper',
+        separator: '_',
+      },
+    ];
+
+    expect(
+      applyRulesToName('Report.txt', false, rules, {
+        index: 0,
+        total: 3,
+        originalName: 'Report.txt',
+        parentPath: '/tmp',
+      }),
+    ).toBe('Z_Report.txt');
+    expect(
+      applyRulesToName('Report.txt', false, rules, {
+        index: 1,
+        total: 3,
+        originalName: 'Report.txt',
+        parentPath: '/tmp',
+      }),
+    ).toBe('AA_Report.txt');
+  });
+
   it('evaluates custom rules against the current naming context', () => {
     const rules: RenameRule[] = [
       {
