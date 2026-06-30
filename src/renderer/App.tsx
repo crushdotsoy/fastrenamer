@@ -210,6 +210,8 @@ function getRuleMeta(t: ReturnType<typeof useI18n>['t']): Record<
 function getNewNameTokens(t: ReturnType<typeof useI18n>['t']) {
   return [
     { label: t('new_name.token.sequence.label'), detail: t('new_name.token.sequence.detail'), value: '{seq_num:0001}' },
+    { label: t('new_name.token.letter_sequence.label'), detail: t('new_name.token.letter_sequence.detail'), value: '{seq_letter}' },
+    { label: t('new_name.token.reverse_letter_sequence.label'), detail: t('new_name.token.reverse_letter_sequence.detail'), value: '{seq_letter_rev}' },
     { label: t('new_name.token.original.label'), detail: t('new_name.token.original.detail'), value: '{original_stem}' },
     { label: t('new_name.token.current.label'), detail: t('new_name.token.current.detail'), value: '{current_stem}' },
     { label: t('new_name.token.parent.label'), detail: t('new_name.token.parent.detail'), value: '{parent}' },
@@ -317,7 +319,7 @@ function createRule(type: RenameRule['type']): RenameRule {
   const id = `${type}-${crypto.randomUUID()}`;
   switch (type) {
     case 'new_name':
-      return { id, type, enabled: true, template: 'name_{seq_num:0001}' };
+      return { id, type, enabled: true, template: 'name_{seq_num:0001}', reverseSequence: false };
     case 'custom_rule':
       return { id, type, enabled: true, expression: 'currentName' };
     case 'find_replace':
@@ -2697,6 +2699,12 @@ function NewNameRuleEditor({
           {t('editor.new_name.help')}
         </p>
       </div>
+
+      <Checkbox
+        checked={rule.reverseSequence ?? false}
+        onCheckedChange={(checked) => onChange({ ...rule, reverseSequence: checked === true })}
+        label={t('editor.new_name.reverse_sequence')}
+      />
 
       <div className="space-y-2">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">

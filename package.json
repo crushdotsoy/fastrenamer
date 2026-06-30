@@ -1,6 +1,6 @@
 {
   "name": "fast-renamer",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Desktop batch renaming utility built with Bun, Electron, React, and TypeScript.",
   "author": "crushdotsoy",
   "type": "module",
@@ -90,7 +90,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.3.1",
+    "@tailwindcss/vite": "^4.3.2",
     "@types/node": "^26.0.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
@@ -99,9 +99,9 @@
     "electron-builder": "^26.15.3",
     "jsdom": "^29.1.1",
     "postcss": "^8.5.16",
-    "tailwindcss": "^4.3.1",
+    "tailwindcss": "^4.3.2",
     "typescript": "^6.0.3",
-    "vite": "^8.1.0",
+    "vite": "^8.1.1",
     "vite-plugin-electron-renderer": "^1.0.0",
     "vitest": "^4.1.9"
   },

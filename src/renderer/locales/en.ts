@@ -45,6 +45,10 @@ export const en = {
 
   'new_name.token.sequence.label': 'Sequence',
   'new_name.token.sequence.detail': '0001, 0002, 0003',
+  'new_name.token.letter_sequence.label': 'Letter Sequence',
+  'new_name.token.letter_sequence.detail': 'A, B, C',
+  'new_name.token.reverse_letter_sequence.label': 'Reverse Letter Sequence',
+  'new_name.token.reverse_letter_sequence.detail': 'C, B, A',
   'new_name.token.original.label': 'Original Name',
   'new_name.token.original.detail': 'Current file name',
   'new_name.token.current.label': 'Current Result',
@@ -115,6 +119,7 @@ export const en = {
 
   'editor.new_name.placeholder': 'name_{seq_num:0001}',
   'editor.new_name.help': 'Click a token to insert it where your cursor is. Extensions stay unchanged unless you add an Extension rule.',
+  'editor.new_name.reverse_sequence': 'Reverse sequence',
   'editor.new_name.quick_insert': 'Quick Insert',
   'editor.new_name.starters': 'Starter Templates',
   'editor.custom.beta': 'Beta',
