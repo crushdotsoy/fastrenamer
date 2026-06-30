@@ -27,6 +27,7 @@ const renameRuleSchema = z.discriminatedUnion('type', [
   baseRuleSchema.extend({
     type: z.literal('new_name'),
     template: z.string(),
+    reverseSequence: z.boolean().optional(),
   }),
   baseRuleSchema.extend({
     type: z.literal('custom_rule'),

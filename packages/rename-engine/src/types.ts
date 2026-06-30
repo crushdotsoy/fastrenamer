@@ -23,6 +23,7 @@ export interface BaseRule {
 export interface NewNameRule extends BaseRule {
   type: 'new_name';
   template: string;
+  reverseSequence?: boolean;
 }
 
 export interface CustomRule extends BaseRule {

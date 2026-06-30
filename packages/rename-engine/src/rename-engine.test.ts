@@ -59,6 +59,63 @@ describe('applyRulesToName', () => {
     ).toBe('name_0002_Report Final.txt');
   });
 
+  it('renders new-name template sequences in reverse order', () => {
+    const rules: RenameRule[] = [
+      {
+        id: 'new-name',
+        type: 'new_name',
+        enabled: true,
+        template: 'name_{seq_num:0001}',
+        reverseSequence: true,
+      },
+    ];
+
+    expect(
+      applyRulesToName('Report Final.txt', false, rules, {
+        index: 0,
+        total: 3,
+        originalName: 'Report Final.txt',
+        parentPath: '/tmp/Clients',
+      }),
+    ).toBe('name_0003.txt');
+    expect(
+      applyRulesToName('Report Final.txt', false, rules, {
+        index: 2,
+        total: 3,
+        originalName: 'Report Final.txt',
+        parentPath: '/tmp/Clients',
+      }),
+    ).toBe('name_0001.txt');
+  });
+
+  it('renders new-name template letter sequences in forward and reverse order', () => {
+    const rules: RenameRule[] = [
+      {
+        id: 'new-name',
+        type: 'new_name',
+        enabled: true,
+        template: 'name_{seq_letter}_{seq_letter_rev}_{seq_letter:lower}_{seq_letter_rev:lower}',
+      },
+    ];
+
+    expect(
+      applyRulesToName('Report Final.txt', false, rules, {
+        index: 0,
+        total: 3,
+        originalName: 'Report Final.txt',
+        parentPath: '/tmp/Clients',
+      }),
+    ).toBe('name_A_C_a_c.txt');
+    expect(
+      applyRulesToName('Report Final.txt', false, rules, {
+        index: 2,
+        total: 3,
+        originalName: 'Report Final.txt',
+        parentPath: '/tmp/Clients',
+      }),
+    ).toBe('name_C_A_c_a.txt');
+  });
+
   it('inserts spreadsheet-style letter sequences', () => {
     const rules: RenameRule[] = [
       {
@@ -157,6 +214,91 @@ describe('generatePreview', () => {
       '1_file1.txt',
       '2_file2.txt',
       '3_file10.txt',
+    ]);
+  });
+
+  it('uses sorted preview order for reverse new-name sequence numbering', () => {
+    const preview = generatePreview({
+      items: [
+        {
+          sourcePath: '/tmp/file10.txt',
+          name: 'file10.txt',
+          parentPath: '/tmp',
+          isDirectory: false,
+        },
+        {
+          sourcePath: '/tmp/file2.txt',
+          name: 'file2.txt',
+          parentPath: '/tmp',
+          isDirectory: false,
+        },
+        {
+          sourcePath: '/tmp/file1.txt',
+          name: 'file1.txt',
+          parentPath: '/tmp',
+          isDirectory: false,
+        },
+      ],
+      sortMode: 'natural_path',
+      rules: [
+        {
+          id: 'new-name',
+          type: 'new_name',
+          enabled: true,
+          template: 'name_{seq_num:0001}',
+          reverseSequence: true,
+        },
+      ],
+      platform: 'linux',
+      existingPathExists: () => false,
+    });
+
+    expect(preview.rows.map((row) => row.proposedName)).toEqual([
+      'name_0003.txt',
+      'name_0002.txt',
+      'name_0001.txt',
+    ]);
+  });
+
+  it('uses sorted preview order for new-name letter sequence tokens', () => {
+    const preview = generatePreview({
+      items: [
+        {
+          sourcePath: '/tmp/file10.txt',
+          name: 'file10.txt',
+          parentPath: '/tmp',
+          isDirectory: false,
+        },
+        {
+          sourcePath: '/tmp/file2.txt',
+          name: 'file2.txt',
+          parentPath: '/tmp',
+          isDirectory: false,
+        },
+        {
+          sourcePath: '/tmp/file1.txt',
+          name: 'file1.txt',
+          parentPath: '/tmp',
+          isDirectory: false,
+        },
+      ],
+      sortMode: 'natural_path',
+      rules: [
+        {
+          id: 'new-name',
+          type: 'new_name',
+          enabled: true,
+          template: 'name_{seq_letter}_{seq_letter_rev}',
+        },
+      ],
+      platform: 'linux',
+      existingPathExists: () => false,
+    });
+
+    expect(preview.rows.map((row) => row.proposedName)).toEqual([
+      'name_A_C.txt',
+      'name_B_B.txt',
+      'name_C_A.txt',
     ]);
   });
 

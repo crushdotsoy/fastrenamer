@@ -217,6 +217,11 @@ function formatLetterSequence(value: number, casing: 'upper' | 'lower') {
   return sequence;
 }
 
+function parseLetterSequenceCasing(argument?: string): 'upper' | 'lower' {
+  const normalizedArgument = argument?.toLowerCase();
+  return normalizedArgument === 'lower' || normalizedArgument === 'a' ? 'lower' : 'upper';
+}
+
 function renderNewNameTemplate(
   template: string,
   currentParts: NameParts,
@@ -224,9 +229,13 @@ function renderNewNameTemplate(
   isDirectory: boolean,
   context: RuleContext,
   now: Date,
+  reverseSequence = false,
 ) {
   const originalParts = splitName(originalName, isDirectory);
   const parentName = path.basename(context.parentPath);
+  const sequenceIndex = reverseSequence ? Math.max(0, context.total - context.index - 1) : context.index;
+  const letterSequenceValue = context.index + 1;
+  const reverseLetterSequenceValue = Math.max(1, context.total - context.index);
 
   return template.replaceAll(/\{([a-z_]+)(?::([^}]+))?\}/gi, (token, rawKey: string, rawArg?: string) => {
     const key = rawKey.toLowerCase();
@@ -242,7 +251,15 @@ function renderNewNameTemplate(
         return parentName;
       case 'seq':
       case 'seq_num':
-        return formatSequenceToken(context.index, rawArg);
+        return formatSequenceToken(sequenceIndex, rawArg);
+      case 'seq_letter':
+      case 'letter_seq':
+        return formatLetterSequence(letterSequenceValue, parseLetterSequenceCasing(rawArg));
+      case 'seq_letter_rev':
+      case 'seq_letter_reverse':
+      case 'reverse_seq_letter':
+      case 'reverse_letter_seq':
+        return formatLetterSequence(reverseLetterSequenceValue, parseLetterSequenceCasing(rawArg));
       case 'date':
         return formatDateToken(now, rawArg || 'YYYY-MM-DD');
       case 'time':
@@ -269,7 +286,15 @@ export function applyRulesToName(
 
     switch (rule.type) {
       case 'new_name':
-        parts.stem = renderNewNameTemplate(rule.template, parts, originalName, isDirectory, context, now);
+        parts.stem = renderNewNameTemplate(
+          rule.template,
+          parts,
+          originalName,
+          isDirectory,
+          context,
+          now,
+          rule.reverseSequence,
+        );
         break;
       case 'custom_rule': {
         try {

@@ -44,6 +44,10 @@ export const ptPT = {
 
   'new_name.token.sequence.label': 'Sequencia',
   'new_name.token.sequence.detail': '0001, 0002, 0003',
+  'new_name.token.letter_sequence.label': 'Sequencia de Letras',
+  'new_name.token.letter_sequence.detail': 'A, B, C',
+  'new_name.token.reverse_letter_sequence.label': 'Sequencia de Letras Inversa',
+  'new_name.token.reverse_letter_sequence.detail': 'C, B, A',
   'new_name.token.original.label': 'Nome Original',
   'new_name.token.original.detail': 'Nome atual do ficheiro',
   'new_name.token.current.label': 'Resultado Atual',
@@ -114,6 +118,7 @@ export const ptPT = {
 
   'editor.new_name.placeholder': 'name_{seq_num:0001}',
   'editor.new_name.help': 'Clique num token para o inserir onde o cursor esta. As extensoes mantem-se, a menos que adicione uma regra de Extensao.',
+  'editor.new_name.reverse_sequence': 'Sequencia inversa',
   'editor.new_name.quick_insert': 'Insercao Rapida',
   'editor.new_name.starters': 'Modelos Iniciais',
   'editor.custom.beta': 'Beta',
