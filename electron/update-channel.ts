@@ -1,7 +1,10 @@
 import type { UpdateChannel } from '../src/shared/contracts';
 
 const GITHUB_RELEASES_URL = 'https://github.com/crushdotsoy/fastrenamer/releases';
-const EA_RELEASE_TAG = 'ea';
+
+function toReleaseTag(version: string) {
+  return version.startsWith('v') ? version : `v${version}`;
+}
 
 export function resolveDefaultUpdateChannel(version: string): UpdateChannel {
   return version.includes('-ea') ? 'ea' : 'stable';
@@ -21,12 +24,16 @@ export function applyUpdateChannelSettings(
 
 export function getReleaseDownloadUrl(channel: UpdateChannel, version?: string) {
   if (channel === 'ea') {
-    return `${GITHUB_RELEASES_URL}/tag/${EA_RELEASE_TAG}`;
+    if (version) {
+      return `${GITHUB_RELEASES_URL}/tag/${toReleaseTag(version)}`;
+    }
+
+    return `${GITHUB_RELEASES_URL}?prerelease=1`;
   }
 
   if (!version) {
     return `${GITHUB_RELEASES_URL}/latest`;
   }
 
-  return `${GITHUB_RELEASES_URL}/tag/v${version}`;
+  return `${GITHUB_RELEASES_URL}/tag/${toReleaseTag(version)}`;
 }

@@ -40,9 +40,9 @@ describe('update channel helpers', () => {
     expect(getReleaseDownloadUrl('stable', '0.2.7')).toBe(
       'https://github.com/crushdotsoy/fastrenamer/releases/tag/v0.2.7',
     );
-    expect(getReleaseDownloadUrl('ea')).toBe('https://github.com/crushdotsoy/fastrenamer/releases/tag/ea');
+    expect(getReleaseDownloadUrl('ea')).toBe('https://github.com/crushdotsoy/fastrenamer/releases?prerelease=1');
     expect(getReleaseDownloadUrl('ea', '0.2.6-ea.42')).toBe(
-      'https://github.com/crushdotsoy/fastrenamer/releases/tag/ea',
+      'https://github.com/crushdotsoy/fastrenamer/releases/tag/v0.2.6-ea.42',
     );
   });
 });

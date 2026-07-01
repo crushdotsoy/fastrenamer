@@ -30,7 +30,7 @@ jobs:
         id: tag
         shell: bash
         run: |
-          tag_name="$(git tag --points-at HEAD | grep -E '^v' | head -n 1 || true)"
+          tag_name="$(git tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
           if [ -z "${tag_name}" ]; then
             echo "No stable release tag found for this CI run."
           fi

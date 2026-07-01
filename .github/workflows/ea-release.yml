@@ -20,6 +20,7 @@ jobs:
 
     outputs:
       ea_version: ${{ steps.version.outputs.ea_version }}
+      ea_tag: ${{ steps.version.outputs.ea_tag }}
 
     steps:
       - name: Checkout
@@ -33,7 +34,9 @@ jobs:
         run: |
           base_version="$(jq -r '.version' package.json)"
           ea_version="${base_version}-ea.${GITHUB_RUN_NUMBER}"
+          ea_tag="v${ea_version}"
           echo "ea_version=${ea_version}" >> "${GITHUB_OUTPUT}"
+          echo "ea_tag=${ea_tag}" >> "${GITHUB_OUTPUT}"
 
   create_ea_release:
     name: Create EA Release
@@ -48,22 +51,29 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: Create or refresh Early Access release
+      - name: Create Early Access release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          TAG_NAME: ${{ needs.prepare_ea_version.outputs.ea_tag }}
+          EA_VERSION: ${{ needs.prepare_ea_version.outputs.ea_version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -fa ea -m "Early Access" "${RELEASE_SHA}"
-          git push origin ea --force
 
-          if gh release view ea --repo "${GH_REPO}" >/dev/null 2>&1; then
-            gh release edit ea --repo "${GH_REPO}" --prerelease --title "Early Access" --notes "Latest early access build from main."
+          if git rev-parse -q --verify "refs/tags/${TAG_NAME}" >/dev/null; then
+            echo "Tag ${TAG_NAME} already exists"
           else
-            gh release create ea --repo "${GH_REPO}" --title "Early Access" --prerelease --target "${RELEASE_SHA}" --notes "Latest early access build from main."
+            git tag -a "${TAG_NAME}" -m "Early Access ${EA_VERSION}" "${RELEASE_SHA}"
+            git push origin "${TAG_NAME}"
+          fi
+
+          if gh release view "${TAG_NAME}" --repo "${GH_REPO}" >/dev/null 2>&1; then
+            echo "Release ${TAG_NAME} already exists"
+          else
+            gh release create "${TAG_NAME}" --repo "${GH_REPO}" --title "Early Access ${EA_VERSION}" --prerelease --target "${RELEASE_SHA}" --generate-notes
           fi
 
   build_ea:
@@ -125,6 +135,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          TAG_NAME: ${{ needs.prepare_ea_version.outputs.ea_tag }}
         run: |
           files=()
           while IFS= read -r file; do
@@ -142,4 +153,4 @@ jobs:
             exit 1
           fi
 
-          gh release upload ea "${files[@]}" --repo "${GH_REPO}" --clobber
+          gh release upload "${TAG_NAME}" "${files[@]}" --repo "${GH_REPO}" --clobber
