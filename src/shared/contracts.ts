@@ -165,6 +165,25 @@ export const presetSchema = z.object({
   rules: z.array(renameRuleSchema),
 }) satisfies z.ZodType<Preset>;
 
+export const presetTransferEntrySchema = z.object({
+  name: z.string().trim().min(1),
+  rules: z.array(renameRuleSchema),
+});
+
+export const presetTransferFileSchema = z.object({
+  app: z.literal('Fast Renamer').optional(),
+  version: z.number().int().positive().optional(),
+  exportedAt: z.string().optional(),
+  presets: z.array(presetTransferEntrySchema),
+});
+
+export const presetImportFileSchema = z.union([
+  presetTransferFileSchema,
+  z.array(presetTransferEntrySchema),
+]);
+
+export type PresetTransferEntry = z.infer<typeof presetTransferEntrySchema>;
+
 export const historyEntrySchema = z.object({
   id: z.number().int(),
   createdAt: z.string(),
@@ -234,6 +253,9 @@ export interface AdvancedRenamerApi {
   listPresets(): Promise<Preset[]>;
   savePreset(input: { id?: number; name: string; rules: RenameRule[] }): Promise<Preset>;
   deletePreset(id: number): Promise<void>;
+  exportUserPresets(): Promise<{ canceled: boolean; exportedCount: number }>;
+  exportUserPreset(id: number): Promise<{ canceled: boolean; exportedCount: number }>;
+  importUserPresets(): Promise<{ canceled: boolean; importedCount: number }>;
   listHistory(): Promise<HistoryEntry[]>;
   minimizeWindow(): Promise<void>;
   toggleMaximizeWindow(): Promise<WindowState>;

@@ -3,15 +3,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow, dialog, ipcMain, Menu, session, shell } from 'electron';
 import { compareNatural } from '@fast-renamer/rename-engine';
+import type { IpcMainInvokeEvent, OpenDialogOptions, SaveDialogOptions } from 'electron';
 import {
   pickSourcesRequestSchema,
   executeRenameBatchRequestSchema,
+  presetImportFileSchema,
   previewRequestSchema,
   undoRenameBatchRequestSchema,
   pathListRequestSchema,
   savePresetRequestSchema,
   deletePresetRequestSchema,
 } from '../src/shared/contracts';
+import type { PresetTransferEntry } from '../src/shared/contracts';
 import { AppDatabase } from './db';
 import {
   executeRenameBatch,
@@ -30,6 +33,7 @@ const mainDir = path.dirname(fileURLToPath(import.meta.url));
 
 const getPlatform = () => process.platform as 'darwin' | 'win32' | 'linux';
 const DEFAULT_WINDOW_STATE = { isMaximized: false };
+const PRESET_TRANSFER_VERSION = 1;
 
 function serializeWindowState(window: BrowserWindow) {
   return { isMaximized: window.isMaximized() };
@@ -37,6 +41,82 @@ function serializeWindowState(window: BrowserWindow) {
 
 function emitWindowState(window: BrowserWindow) {
   window.webContents.send('window:stateChanged', serializeWindowState(window));
+}
+
+function getDialogWindow(event: IpcMainInvokeEvent) {
+  return BrowserWindow.fromWebContents(event.sender) ?? mainWindow ?? undefined;
+}
+
+function normalizePresetImportPayload(payload: unknown) {
+  const parsed = presetImportFileSchema.safeParse(payload);
+  if (!parsed.success) {
+    throw new Error('The selected file is not a valid Fast Renamer presets export.');
+  }
+
+  return Array.isArray(parsed.data) ? parsed.data : parsed.data.presets;
+}
+
+function sanitizeExportFilename(name: string) {
+  const sanitized = name
+    .trim()
+    .replace(/[/\\?%*:|"<>]/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase();
+
+  return sanitized || 'preset';
+}
+
+function createPresetTransferFile(presets: PresetTransferEntry[]) {
+  return {
+    app: 'Fast Renamer',
+    version: PRESET_TRANSFER_VERSION,
+    exportedAt: new Date().toISOString(),
+    presets,
+  };
+}
+
+function showSavePresetDialog(event: IpcMainInvokeEvent, defaultFilename = 'fast-renamer-presets.json') {
+  const options: SaveDialogOptions = {
+    title: 'Export Presets',
+    defaultPath: path.join(app.getPath('documents'), defaultFilename),
+    filters: [{ name: 'Fast Renamer Presets', extensions: ['json'] }],
+  };
+  const window = getDialogWindow(event);
+
+  return window ? dialog.showSaveDialog(window, options) : dialog.showSaveDialog(options);
+}
+
+async function exportPresetTransferFile(
+  event: IpcMainInvokeEvent,
+  presets: PresetTransferEntry[],
+  defaultFilename?: string,
+) {
+  const { canceled, filePath } = await showSavePresetDialog(event, defaultFilename);
+
+  if (canceled || !filePath) {
+    return { canceled: true, exportedCount: 0 };
+  }
+
+  await fs.promises.writeFile(
+    filePath,
+    `${JSON.stringify(createPresetTransferFile(presets), null, 2)}\n`,
+    'utf8',
+  );
+
+  return { canceled: false, exportedCount: presets.length };
+}
+
+function showOpenPresetDialog(event: IpcMainInvokeEvent) {
+  const options: OpenDialogOptions = {
+    title: 'Import Presets',
+    properties: ['openFile'],
+    filters: [{ name: 'Fast Renamer Presets', extensions: ['json'] }],
+  };
+  const window = getDialogWindow(event);
+
+  return window ? dialog.showOpenDialog(window, options) : dialog.showOpenDialog(options);
 }
 
 function resolvePreloadPath() {
@@ -191,6 +271,32 @@ function registerIpc() {
 
   ipcMain.handle('deletePreset', (_event, payload) => {
     database.deletePreset(deletePresetRequestSchema.parse(payload));
+  });
+
+  ipcMain.handle('exportUserPresets', async (event) => {
+    const presets = database.listUserPresetTransfers();
+    return exportPresetTransferFile(event, presets);
+  });
+
+  ipcMain.handle('exportUserPreset', async (event, presetId: number) => {
+    const preset = database.getUserPresetTransfer(presetId);
+    const defaultFilename = `fast-renamer-${sanitizeExportFilename(preset.name)}.json`;
+    return exportPresetTransferFile(event, [preset], defaultFilename);
+  });
+
+  ipcMain.handle('importUserPresets', async (event) => {
+    const { canceled, filePaths } = await showOpenPresetDialog(event);
+
+    if (canceled || filePaths.length === 0) {
+      return { canceled: true, importedCount: 0 };
+    }
+
+    const raw = await fs.promises.readFile(filePaths[0], 'utf8');
+    const payload = JSON.parse(raw) as unknown;
+    const presets = normalizePresetImportPayload(payload);
+    const importedCount = database.importUserPresets(presets);
+
+    return { canceled: false, importedCount };
   });
 
   ipcMain.handle('listHistory', () => listHistoryWithUndoStatus(getPlatform(), database));

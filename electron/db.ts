@@ -9,6 +9,7 @@ import type {
   RenameBatchRecord,
   RenameRule,
 } from '@fast-renamer/rename-engine';
+import type { PresetTransferEntry } from '../src/shared/contracts';
 
 const SAMPLE_PRESETS: Array<{ name: string; rules: RenameRule[] }> = [
   {
@@ -237,6 +238,48 @@ export class AppDatabase {
       updatedAt: now,
       rules: input.rules,
     };
+  }
+
+  listUserPresetTransfers(): PresetTransferEntry[] {
+    return this.listPresets()
+      .filter((preset) => !preset.isSample)
+      .map((preset) => ({
+        name: preset.name,
+        rules: preset.rules,
+      }));
+  }
+
+  getUserPresetTransfer(id: number): PresetTransferEntry {
+    const row = this.database
+      .prepare(
+        `SELECT name, is_sample, rules_json
+         FROM presets
+         WHERE id = ?`,
+      )
+      .get(id) as Record<string, unknown> | undefined;
+
+    if (!row) {
+      throw new Error(`Preset ${id} does not exist.`);
+    }
+    if (Boolean(row.is_sample)) {
+      throw new Error('Sample presets cannot be exported individually.');
+    }
+
+    return {
+      name: String(row.name),
+      rules: JSON.parse(String(row.rules_json)) as RenameRule[],
+    };
+  }
+
+  importUserPresets(presets: PresetTransferEntry[]) {
+    for (const preset of presets) {
+      this.savePreset({
+        name: preset.name.trim(),
+        rules: preset.rules,
+      });
+    }
+
+    return presets.length;
   }
 
   deletePreset(id: number) {
