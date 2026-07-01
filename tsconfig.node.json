@@ -16,5 +16,5 @@
       "@fast-renamer/rename-engine": ["./packages/rename-engine/src/index.ts"]
     }
   },
-  "include": ["electron", "vite.config.ts", "tailwind.config.ts", "src/shared", "packages", "src/**/*.test.ts"]
+  "include": ["electron", "vite.config.ts", "src/shared", "packages", "src/**/*.test.ts"]
 }
