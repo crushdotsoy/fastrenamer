@@ -23,7 +23,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.11
+          bun-version: 1.3.14
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -38,6 +38,9 @@ jobs:
 
       - name: Test
         run: bun run test
+
+      - name: Build
+        run: bun run build
 
   create_release:
     name: Create Draft Release
@@ -85,7 +88,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.11
+          bun-version: 1.3.14
 
       - name: Setup Node
         uses: actions/setup-node@v4
