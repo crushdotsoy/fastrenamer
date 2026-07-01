@@ -5,9 +5,10 @@ import { es } from './locales/es';
 import { fr } from './locales/fr';
 import { it } from './locales/it';
 import { ptPT } from './locales/pt-PT';
+import { DEFAULT_LOCALE, resolveNavigatorLocale, resolveStoredLocale, type AppLocale } from '@shared/i18n-locale';
 
-export type AppLocale = 'de' | 'en' | 'es' | 'fr' | 'it' | 'pt-PT';
-export const DEFAULT_LOCALE: AppLocale = 'en';
+export type { AppLocale } from '@shared/i18n-locale';
+export { DEFAULT_LOCALE, resolveNavigatorLocale, resolveStoredLocale } from '@shared/i18n-locale';
 
 type TranslationValue = string | ((vars?: Record<string, unknown>) => string);
 type TranslationDict = Record<string, TranslationValue>;
@@ -51,29 +52,12 @@ function interpolate(template: string, vars?: Record<string, unknown>) {
 }
 
 function detectInitialLocale(): AppLocale {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === 'en' || stored === 'pt-PT') {
+  const stored = resolveStoredLocale(localStorage.getItem(STORAGE_KEY));
+  if (stored) {
     return stored;
   }
 
-  const normalized = navigator.language.toLowerCase();
-  if (normalized.startsWith('de')) {
-    return 'de';
-  }
-  if (normalized.startsWith('es')) {
-    return 'es';
-  }
-  if (normalized.startsWith('fr')) {
-    return 'fr';
-  }
-  if (normalized.startsWith('it')) {
-    return 'it';
-  }
-  if (normalized.startsWith('pt')) {
-    return 'pt-PT';
-  }
-
-  return DEFAULT_LOCALE;
+  return resolveNavigatorLocale(navigator.language);
 }
 
 interface I18nContextValue {
