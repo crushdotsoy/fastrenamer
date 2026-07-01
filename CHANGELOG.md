@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.2.6 - 2026-07-01
+
+### Changed
+
+- Synced README and changelog with the current package version.
+
 ## 0.2.0 - 2026-04-10
 
 ### Added
