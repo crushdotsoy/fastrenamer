@@ -1,14 +1,20 @@
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow } from 'electron';
 import electronUpdater from 'electron-updater';
 import type { ProgressInfo, UpdateDownloadedEvent, UpdateInfo } from 'electron-updater';
-import type { UpdateState } from '../src/shared/contracts';
+import type { UpdateChannel, UpdateState } from '../src/shared/contracts';
+import {
+  applyUpdateChannelSettings,
+  getReleaseDownloadUrl,
+  resolveDefaultUpdateChannel,
+} from './update-channel';
 
 const { autoUpdater } = electronUpdater;
 
 const UPDATE_CHECK_INTERVAL_MS = 1000 * 60 * 60 * 6;
-const GITHUB_RELEASES_URL = 'https://github.com/crushdotsoy/fastrenamer/releases';
+const UPDATE_CHANNEL_FILE = 'update-channel.json';
 
 function toIsoDate(value?: string | Date) {
   if (!value) {
@@ -57,15 +63,33 @@ function getWindowsPortableManualDownloadMessage() {
   return 'This Windows portable build can check for updates, but new versions must be downloaded manually from GitHub Releases.';
 }
 
-function getReleaseDownloadUrl(version?: string) {
-  if (!version) {
-    return `${GITHUB_RELEASES_URL}/latest`;
-  }
-
-  return `${GITHUB_RELEASES_URL}/tag/v${version}`;
+function getChannelFilePath() {
+  return path.join(app.getPath('userData'), UPDATE_CHANNEL_FILE);
 }
 
-function toBaseState(info: UpdateInfo | UpdateDownloadedEvent | undefined, previousState?: UpdateState) {
+function loadStoredUpdateChannel(): UpdateChannel | undefined {
+  try {
+    const raw = fs.readFileSync(getChannelFilePath(), 'utf8');
+    const parsed = JSON.parse(raw) as { channel?: unknown };
+    if (parsed.channel === 'ea' || parsed.channel === 'stable') {
+      return parsed.channel;
+    }
+  } catch {
+    return undefined;
+  }
+
+  return undefined;
+}
+
+function saveUpdateChannel(channel: UpdateChannel) {
+  fs.writeFileSync(getChannelFilePath(), JSON.stringify({ channel }), 'utf8');
+}
+
+function toBaseState(
+  info: UpdateInfo | UpdateDownloadedEvent | undefined,
+  previousState: UpdateState | undefined,
+  channel: UpdateChannel,
+) {
   return {
     currentVersion: app.getVersion(),
     availableVersion: info?.version ?? previousState?.availableVersion,
@@ -73,6 +97,7 @@ function toBaseState(info: UpdateInfo | UpdateDownloadedEvent | undefined, previ
     releaseName: info?.releaseName ?? previousState?.releaseName,
     manualDownloadOnly: previousState?.manualDownloadOnly ?? false,
     downloadUrl: previousState?.downloadUrl,
+    channel,
   };
 }
 
@@ -80,8 +105,10 @@ export class AppUpdaterManager {
   private state: UpdateState = {
     status: 'idle',
     currentVersion: app.getVersion(),
+    channel: resolveDefaultUpdateChannel(app.getVersion()),
   };
 
+  private channel: UpdateChannel = this.state.channel;
   private interval: NodeJS.Timeout | null = null;
   private initialized = false;
   private checking = false;
@@ -94,16 +121,23 @@ export class AppUpdaterManager {
     return this.state;
   }
 
+  getChannel() {
+    return this.channel;
+  }
+
   initialize() {
     if (this.initialized) {
       return;
     }
     this.initialized = true;
 
+    this.channel = loadStoredUpdateChannel() ?? resolveDefaultUpdateChannel(app.getVersion());
+
     if (!app.isPackaged) {
       this.setState({
         status: 'disabled',
         currentVersion: app.getVersion(),
+        channel: this.channel,
         message: 'Automatic updates are only available in installed release builds.',
       });
       return;
@@ -111,13 +145,20 @@ export class AppUpdaterManager {
 
     this.manualDownloadMessage = getMacManualDownloadMessage() ?? getWindowsPortableManualDownloadMessage();
     this.manualDownloadOnly = Boolean(this.manualDownloadMessage);
+    applyUpdateChannelSettings(autoUpdater, this.channel);
 
     if (this.manualDownloadOnly) {
       this.setState({
         ...this.state,
+        channel: this.channel,
         manualDownloadOnly: true,
         message: this.manualDownloadMessage,
-        downloadUrl: `${GITHUB_RELEASES_URL}/latest`,
+        downloadUrl: getReleaseDownloadUrl(this.channel),
+      });
+    } else {
+      this.setState({
+        ...this.state,
+        channel: this.channel,
       });
     }
 
@@ -126,7 +167,7 @@ export class AppUpdaterManager {
 
     autoUpdater.on('checking-for-update', () => {
       this.setState({
-        ...toBaseState(undefined, this.state),
+        ...toBaseState(undefined, this.state, this.channel),
         status: 'checking',
         checkedAt: new Date().toISOString(),
         message: this.manualDownloadMessage,
@@ -134,9 +175,9 @@ export class AppUpdaterManager {
     });
 
     autoUpdater.on('update-available', (info) => {
-      const downloadUrl = getReleaseDownloadUrl(info.version);
+      const downloadUrl = getReleaseDownloadUrl(this.channel, info.version);
       this.setState({
-        ...toBaseState(info, this.state),
+        ...toBaseState(info, this.state, this.channel),
         status: 'available',
         checkedAt: new Date().toISOString(),
         message: this.manualDownloadOnly
@@ -149,18 +190,18 @@ export class AppUpdaterManager {
 
     autoUpdater.on('update-not-available', (info) => {
       this.setState({
-        ...toBaseState(info, this.state),
+        ...toBaseState(info, this.state, this.channel),
         status: 'up-to-date',
         checkedAt: new Date().toISOString(),
         message: this.manualDownloadMessage,
         manualDownloadOnly: this.manualDownloadOnly,
-        downloadUrl: this.manualDownloadOnly ? `${GITHUB_RELEASES_URL}/latest` : undefined,
+        downloadUrl: this.manualDownloadOnly ? getReleaseDownloadUrl(this.channel) : undefined,
       });
     });
 
     autoUpdater.on('download-progress', (progress) => {
       this.setState({
-        ...toBaseState(undefined, this.state),
+        ...toBaseState(undefined, this.state, this.channel),
         status: 'downloading',
         checkedAt: this.state.checkedAt ?? new Date().toISOString(),
         progress: this.toProgress(progress),
@@ -170,7 +211,7 @@ export class AppUpdaterManager {
 
     autoUpdater.on('update-downloaded', (info) => {
       this.setState({
-        ...toBaseState(info, this.state),
+        ...toBaseState(info, this.state, this.channel),
         status: 'downloaded',
         checkedAt: new Date().toISOString(),
         message: undefined,
@@ -179,11 +220,13 @@ export class AppUpdaterManager {
 
     autoUpdater.on('error', (error) => {
       this.setState({
-        ...toBaseState(undefined, this.state),
+        ...toBaseState(undefined, this.state, this.channel),
         status: 'error',
         checkedAt: new Date().toISOString(),
         manualDownloadOnly: this.manualDownloadOnly,
-        downloadUrl: this.manualDownloadOnly ? `${GITHUB_RELEASES_URL}/latest` : this.state.downloadUrl,
+        downloadUrl: this.manualDownloadOnly
+          ? getReleaseDownloadUrl(this.channel)
+          : this.state.downloadUrl,
         message: error.message || 'Failed to check for updates.',
       });
     });
@@ -201,6 +244,36 @@ export class AppUpdaterManager {
     }
   }
 
+  async setChannel(channel: UpdateChannel) {
+    this.channel = channel;
+    saveUpdateChannel(channel);
+
+    if (!app.isPackaged) {
+      this.setState({
+        ...this.state,
+        channel,
+      });
+      return this.state;
+    }
+
+    applyUpdateChannelSettings(autoUpdater, channel);
+
+    if (this.manualDownloadOnly) {
+      this.setState({
+        ...this.state,
+        channel,
+        downloadUrl: getReleaseDownloadUrl(channel),
+      });
+    } else {
+      this.setState({
+        ...this.state,
+        channel,
+      });
+    }
+
+    return this.checkForUpdates();
+  }
+
   async checkForUpdates() {
     if (!app.isPackaged) {
       return this.state;
@@ -216,11 +289,13 @@ export class AppUpdaterManager {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to check for updates.';
       this.setState({
-        ...toBaseState(undefined, this.state),
+        ...toBaseState(undefined, this.state, this.channel),
         status: 'error',
         checkedAt: new Date().toISOString(),
         manualDownloadOnly: this.manualDownloadOnly,
-        downloadUrl: this.manualDownloadOnly ? `${GITHUB_RELEASES_URL}/latest` : this.state.downloadUrl,
+        downloadUrl: this.manualDownloadOnly
+          ? getReleaseDownloadUrl(this.channel)
+          : this.state.downloadUrl,
         message,
       });
     } finally {

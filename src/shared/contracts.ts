@@ -207,9 +207,12 @@ export type UpdateStatus =
   | 'installing'
   | 'error';
 
+export type UpdateChannel = 'stable' | 'ea';
+
 export interface UpdateState {
   status: UpdateStatus;
   currentVersion: string;
+  channel: UpdateChannel;
   availableVersion?: string;
   releaseDate?: string;
   releaseName?: string;
@@ -238,6 +241,8 @@ export interface AdvancedRenamerApi {
   getWindowState(): Promise<WindowState>;
   onWindowStateChanged(listener: (state: WindowState) => void): () => void;
   getUpdateState(): Promise<UpdateState>;
+  getUpdateChannel(): Promise<UpdateChannel>;
+  setUpdateChannel(channel: UpdateChannel): Promise<UpdateState>;
   checkForUpdates(): Promise<UpdateState>;
   quitAndInstallUpdate(): Promise<boolean>;
   openUpdateDownload(): Promise<boolean>;
