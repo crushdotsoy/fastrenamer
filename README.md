@@ -73,3 +73,10 @@ bun run start
 - `v*` tags publish stable installers through `.github/workflows/release.yml` after CI passes. Switch between Stable and Early Access update channels in `Settings > Updates`.
 - Pull requests and `main`/`v*` pushes run checks through `.github/workflows/ci.yml`.
 - Undo is blocked when current renamed files are missing, restore targets are occupied, or older batches overlap with newer undo-ready batches.
+
+## Releases and code signing
+
+- GitHub Actions builds unsigned artifacts for macOS, Windows, and Linux.
+- macOS auto-update installation requires a Developer ID-signed build. Unsigned or ad hoc-signed macOS builds fall back to manual download from GitHub Releases.
+- Windows portable builds can check for updates but must also be downloaded manually from GitHub Releases.
+- Linux builds are distributed as AppImage/deb artifacts without an auto-update installer.
