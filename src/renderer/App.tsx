@@ -29,6 +29,7 @@ import {
   Download,
   ExternalLink,
   AlertTriangle,
+  Upload,
   X,
 } from 'lucide-react';
 import type { DragEvent, ReactNode } from 'react';
@@ -883,6 +884,7 @@ export function App() {
   const [presetName, setPresetName] = useState('');
   const [presetSearch, setPresetSearch] = useState('');
   const [selectedPresetId, setSelectedPresetId] = useState<number | null>(null);
+  const [presetTransferMessage, setPresetTransferMessage] = useState<string | null>(null);
   const [draftSourceMode, setDraftSourceMode] = useState<SourceMode>(sourceMode);
   const [draftFileNamePattern, setDraftFileNamePattern] = useState(fileNamePattern);
   const [draftSortMode, setDraftSortMode] = useState<SortMode>(sortMode);
@@ -1359,7 +1361,48 @@ export function App() {
     await window.advancedRenamer.savePreset({ id: selectedPresetId ?? undefined, name: presetName.trim(), rules });
     setPresetName('');
     setSelectedPresetId(null);
+    setPresetTransferMessage(null);
     await reloadMetadata();
+  }
+
+  async function exportUserPresets() {
+    setError(null);
+    try {
+      const result = await window.advancedRenamer.exportUserPresets();
+      if (!result.canceled) {
+        setPresetTransferMessage(t('presets.exported', { count: result.exportedCount }));
+      }
+    } catch (err) {
+      setPresetTransferMessage(null);
+      setError(err instanceof Error ? err.message : t('error.export_presets'));
+    }
+  }
+
+  async function exportUserPreset(preset: Preset) {
+    setError(null);
+    try {
+      const result = await window.advancedRenamer.exportUserPreset(preset.id);
+      if (!result.canceled) {
+        setPresetTransferMessage(t('presets.exported', { count: result.exportedCount }));
+      }
+    } catch (err) {
+      setPresetTransferMessage(null);
+      setError(err instanceof Error ? err.message : t('error.export_presets'));
+    }
+  }
+
+  async function importUserPresets() {
+    setError(null);
+    try {
+      const result = await window.advancedRenamer.importUserPresets();
+      if (!result.canceled) {
+        setPresetTransferMessage(t('presets.imported', { count: result.importedCount }));
+        await reloadMetadata();
+      }
+    } catch (err) {
+      setPresetTransferMessage(null);
+      setError(err instanceof Error ? err.message : t('error.import_presets'));
+    }
   }
 
   const lastUndoable = history.find((e) => e.canUndo);
@@ -1688,14 +1731,31 @@ export function App() {
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm font-semibold text-foreground">{t('presets.library')}</p>
-              <div className="w-full sm:w-64">
-                <Input
-                  value={presetSearch}
-                  onChange={(e) => setPresetSearch(e.target.value)}
-                  placeholder={t('presets.search.placeholder')}
-                />
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                <div className="w-full sm:w-64">
+                  <Input
+                    value={presetSearch}
+                    onChange={(e) => setPresetSearch(e.target.value)}
+                    placeholder={t('presets.search.placeholder')}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="secondary" onClick={() => void importUserPresets()}>
+                    <Upload className="h-3.5 w-3.5" />
+                    {t('presets.import')}
+                  </Button>
+                  <Button variant="secondary" onClick={() => void exportUserPresets()}>
+                    <Download className="h-3.5 w-3.5" />
+                    {t('presets.export')}
+                  </Button>
+                </div>
               </div>
             </div>
+            {presetTransferMessage && (
+              <div className="rounded-lg border border-ok/20 bg-ok/10 px-3 py-2 text-xs font-medium text-ok">
+                {presetTransferMessage}
+              </div>
+            )}
             <PresetList
               presets={filteredPresets}
               onLoad={(p) => {
@@ -1706,6 +1766,7 @@ export function App() {
                 setPresetName(p.name);
                 setSelectedPresetId(p.id);
               }}
+              onExport={(p) => void exportUserPreset(p)}
               onDelete={(p) => void window.advancedRenamer.deletePreset(p.id).then(reloadMetadata)}
               emptyMessage={presetSearch.trim() ? t('presets.empty_search') : t('presets.empty')}
             />
@@ -2909,12 +2970,14 @@ function PresetList({
   presets,
   onLoad,
   onEdit,
+  onExport,
   onDelete,
   emptyMessage,
 }: {
   presets: Preset[];
   onLoad: (p: Preset) => void;
   onEdit: (p: Preset) => void;
+  onExport?: (p: Preset) => void;
   onDelete?: (p: Preset) => void;
   emptyMessage: string;
 }) {
@@ -2943,6 +3006,12 @@ function PresetList({
             >
               {t('presets.edit_name')}
             </Button>
+            {onExport && !preset.isSample && (
+              <Button size="sm" variant="ghost" onClick={() => onExport(preset)}>
+                <Download className="h-3.5 w-3.5" />
+                {t('presets.export')}
+              </Button>
+            )}
             {onDelete && !preset.isSample && (
               <Button size="sm" variant="danger" onClick={() => onDelete(preset)}>{t('common.delete')}</Button>
             )}
