@@ -41,8 +41,8 @@ import type {
   RenameRule,
   SortMode,
   SourceSelection,
-} from '@fast-renamer/rename-engine';
-import { sortItemsByMode } from '@fast-renamer/rename-engine';
+} from '@fast-renamer/rename-engine/types';
+import { sortItemsByMode } from '@fast-renamer/rename-engine/sort';
 import type { UpdateState, WindowState } from '@shared/contracts';
 import {
   Badge,

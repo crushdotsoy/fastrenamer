@@ -5,6 +5,8 @@
   "author": "crushdotsoy",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./sort": "./src/sort.ts",
+    "./types": "./src/types.ts"
   }
 }
