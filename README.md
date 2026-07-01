@@ -70,6 +70,5 @@ bun run start
 - Community translations live in `src/renderer/locales/`. Add a new locale file and register it in `src/renderer/i18n.tsx`.
 - Packaged releases can check GitHub Releases for updates automatically, download them in the background, and install on restart.
 - Every merge to `main` publishes Early Access installers to the rolling `ea` prerelease on GitHub Releases.
-- `v*` tags publish stable installers. Switch between Stable and Early Access update channels in `Settings > Updates`.
+- `v*` tags publish stable installers through `.github/workflows/release.yml`. Switch between Stable and Early Access update channels in `Settings > Updates`.
 - Undo is blocked when current renamed files are missing, restore targets are occupied, or older batches overlap with newer undo-ready batches.
-- Release tags trigger packaged artifacts through GitHub Actions.
