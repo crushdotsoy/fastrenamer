@@ -39,9 +39,8 @@ function emitWindowState(window: BrowserWindow) {
 
 function resolvePreloadPath() {
   const candidates = [
-    path.join(app.getAppPath(), 'electron', 'preload.cjs'),
-    path.join(mainDir, 'preload.cjs'),
     path.join(mainDir, 'preload.mjs'),
+    path.join(mainDir, 'preload.cjs'),
     path.join(mainDir, 'preload.js'),
   ];
 
