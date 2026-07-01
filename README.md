@@ -69,6 +69,7 @@ bun run start
 - UI language now persists across restarts and can be changed from `Settings > Appearance`.
 - Community translations live in `src/renderer/locales/`. Add a new locale file and register it in `src/renderer/i18n.tsx`.
 - Packaged releases can check GitHub Releases for updates automatically, download them in the background, and install on restart.
-- Every merge to `main` publishes Early Access installers to the rolling `ea` prerelease on GitHub Releases.
+- Every merge to `main` publishes Early Access installers to the rolling `ea` prerelease on GitHub Releases via `.github/workflows/ea-release.yml`.
 - `v*` tags publish stable installers through `.github/workflows/release.yml`. Switch between Stable and Early Access update channels in `Settings > Updates`.
+- Pull requests and `main` pushes run checks through `.github/workflows/ci.yml`.
 - Undo is blocked when current renamed files are missing, restore targets are occupied, or older batches overlap with newer undo-ready batches.
