@@ -39,14 +39,13 @@ export default defineConfig(({ mode }) => ({
         ]),
   ],
   resolve: {
-    alias: {
-      '@renderer': path.resolve(__dirname, 'src/renderer'),
-      '@shared': path.resolve(__dirname, 'src/shared'),
-      '@fast-renamer/rename-engine': path.resolve(
-        __dirname,
-        'packages/rename-engine/src/index.ts',
-      ),
-    },
+    alias: [
+      { find: '@fast-renamer/rename-engine/sort', replacement: path.resolve(__dirname, 'packages/rename-engine/src/sort.ts') },
+      { find: '@fast-renamer/rename-engine/types', replacement: path.resolve(__dirname, 'packages/rename-engine/src/types.ts') },
+      { find: '@fast-renamer/rename-engine', replacement: path.resolve(__dirname, 'packages/rename-engine/src/index.ts') },
+      { find: '@renderer', replacement: path.resolve(__dirname, 'src/renderer') },
+      { find: '@shared', replacement: path.resolve(__dirname, 'src/shared') },
+    ],
   },
   server: {
     port: 5173,
