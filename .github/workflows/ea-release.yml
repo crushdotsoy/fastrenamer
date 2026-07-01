@@ -4,13 +4,18 @@ permissions:
   contents: write
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
     branches:
       - main
 
 jobs:
   prepare_ea_version:
     name: Prepare EA Version
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
 
     outputs:
@@ -19,6 +24,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Compute EA version
         id: version
@@ -32,27 +39,31 @@ jobs:
     name: Create EA Release
     needs:
       - prepare_ea_version
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Create or refresh Early Access release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -fa ea -m "Early Access" "${GITHUB_SHA}"
+          git tag -fa ea -m "Early Access" "${RELEASE_SHA}"
           git push origin ea --force
 
           if gh release view ea --repo "${GH_REPO}" >/dev/null 2>&1; then
             gh release edit ea --repo "${GH_REPO}" --prerelease --title "Early Access" --notes "Latest early access build from main."
           else
-            gh release create ea --repo "${GH_REPO}" --title "Early Access" --prerelease --target "${GITHUB_SHA}" --notes "Latest early access build from main."
+            gh release create ea --repo "${GH_REPO}" --title "Early Access" --prerelease --target "${RELEASE_SHA}" --notes "Latest early access build from main."
           fi
 
   build_ea:
@@ -60,6 +71,7 @@ jobs:
     needs:
       - prepare_ea_version
       - create_ea_release
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -79,6 +91,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
