@@ -17,6 +17,7 @@ dist-ssr
 dist-electron
 dist-renderer
 .tsc-artifacts
+*.tsbuildinfo
 *.local
 
 # Editor directories and files
