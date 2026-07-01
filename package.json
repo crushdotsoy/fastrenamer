@@ -16,6 +16,9 @@
     "electron:build:mac": "bun run build && electron-builder --mac --publish never",
     "electron:build:win": "bun run build && electron-builder --win --publish never",
     "electron:build:linux": "bun run build && electron-builder --linux --publish never",
+    "electron:build:mac:ea": "bun run build && electron-builder --mac --publish never -c.publish.channel=ea",
+    "electron:build:win:ea": "bun run build && electron-builder --win --publish never -c.publish.channel=ea",
+    "electron:build:linux:ea": "bun run build && electron-builder --linux --publish never -c.publish.channel=ea",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "test:watch": "vitest"

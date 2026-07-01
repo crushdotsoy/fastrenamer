@@ -68,13 +68,13 @@ jobs:
         include:
           - os: macos-latest
             platform_name: macOS
-            build_command: bun run build && electron-builder --mac --publish never
+            build_command: bun run electron:build:mac
           - os: windows-latest
             platform_name: Windows
-            build_command: bun run build && electron-builder --win --publish never
+            build_command: bun run electron:build:win
           - os: ubuntu-latest
             platform_name: Linux
-            build_command: bun run build && electron-builder --linux --publish never
+            build_command: bun run electron:build:linux
 
     steps:
       - name: Checkout
