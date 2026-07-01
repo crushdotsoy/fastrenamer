@@ -132,6 +132,16 @@ export const undoRenameBatchRequestSchema = z.object({
   batchId: z.number().int().positive(),
 }) satisfies z.ZodType<UndoRenameBatchRequest>;
 
+export const pathListRequestSchema = z.array(z.string().min(1)).min(1);
+
+export const savePresetRequestSchema = z.object({
+  id: z.number().int().positive().optional(),
+  name: z.string().trim().min(1),
+  rules: z.array(renameRuleSchema),
+});
+
+export const deletePresetRequestSchema = z.number().int().positive();
+
 export const sourceSelectionSchema = z.object({
   path: z.string(),
   name: z.string(),

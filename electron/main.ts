@@ -3,12 +3,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
 import { compareNatural } from '@fast-renamer/rename-engine';
-import type { RenameRule } from '@fast-renamer/rename-engine';
 import {
   pickSourcesRequestSchema,
   executeRenameBatchRequestSchema,
   previewRequestSchema,
   undoRenameBatchRequestSchema,
+  pathListRequestSchema,
+  savePresetRequestSchema,
+  deletePresetRequestSchema,
 } from '../src/shared/contracts';
 import { AppDatabase } from './db';
 import {
@@ -126,14 +128,15 @@ function registerIpc() {
     return sources.sort((left, right) => compareNatural(left.path, right.path));
   });
 
-  ipcMain.handle('resolveSources', async (_event, paths: string[]) => {
+  ipcMain.handle('resolveSources', async (_event, payload) => {
+    const paths = pathListRequestSchema.parse(payload);
     const uniquePaths = [...new Set(paths)].sort(compareNatural);
     const sources = await Promise.all(uniquePaths.map((pathname) => pickableSource(pathname)));
     return sources.sort((left, right) => compareNatural(left.path, right.path));
   });
 
-  ipcMain.handle('loadDirectoryItems', async (_event, paths: string[]) => {
-    const directoryPaths = [...paths].sort(compareNatural);
+  ipcMain.handle('loadDirectoryItems', async (_event, payload) => {
+    const directoryPaths = [...pathListRequestSchema.parse(payload)].sort(compareNatural);
     const listings = await Promise.all(directoryPaths.map((sourcePath) => loadDirectoryListing(sourcePath)));
     return listings;
   });
@@ -155,12 +158,12 @@ function registerIpc() {
 
   ipcMain.handle('listPresets', () => database.listPresets());
 
-  ipcMain.handle('savePreset', (_event, payload: { id?: number; name: string; rules: RenameRule[] }) =>
-    database.savePreset(payload),
+  ipcMain.handle('savePreset', (_event, payload) =>
+    database.savePreset(savePresetRequestSchema.parse(payload)),
   );
 
-  ipcMain.handle('deletePreset', (_event, presetId: number) => {
-    database.deletePreset(presetId);
+  ipcMain.handle('deletePreset', (_event, payload) => {
+    database.deletePreset(deletePresetRequestSchema.parse(payload));
   });
 
   ipcMain.handle('listHistory', () => listHistoryWithUndoStatus(getPlatform(), database));
