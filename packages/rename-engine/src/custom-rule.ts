@@ -28,7 +28,12 @@ type ExpressionNode =
       left: ExpressionNode;
       right: ExpressionNode;
     }
-  | { type: 'conditional'; test: ExpressionNode; consequent: ExpressionNode; alternate: ExpressionNode };
+  | {
+      type: 'conditional';
+      test: ExpressionNode;
+      consequent: ExpressionNode;
+      alternate: ExpressionNode;
+    };
 
 interface Token {
   type: 'identifier' | 'number' | 'string' | 'operator' | 'punctuation' | 'eof';
@@ -232,7 +237,9 @@ const helpers: Record<string, (...args: ExpressionValue[]) => ExpressionValue> =
   },
   startsWith: (...args) => {
     assertArity('startsWith', args, 2);
-    return asString(args[0], 'startsWith(value)').startsWith(asString(args[1], 'startsWith(search)'));
+    return asString(args[0], 'startsWith(value)').startsWith(
+      asString(args[1], 'startsWith(search)'),
+    );
   },
   endsWith: (...args) => {
     assertArity('endsWith', args, 2);
@@ -282,7 +289,9 @@ const helpers: Record<string, (...args: ExpressionValue[]) => ExpressionValue> =
     assertArity('matchCase', args, 3);
     return asBoolean(args[2], 'matchCase(caseSensitive)')
       ? asString(args[0], 'matchCase(value)').includes(asString(args[1], 'matchCase(search)'))
-      : asString(args[0], 'matchCase(value)').toLowerCase().includes(asString(args[1], 'matchCase(search)').toLowerCase());
+      : asString(args[0], 'matchCase(value)')
+          .toLowerCase()
+          .includes(asString(args[1], 'matchCase(search)').toLowerCase());
   },
 };
 
@@ -311,12 +320,18 @@ function tokenize(expression: string): Token[] {
     }
 
     if ('+-*/%<>!?:(),'.includes(char)) {
-      pushToken(char === '(' || char === ')' || char === ',' || char === '?' || char === ':' ? 'punctuation' : 'operator', char, start);
+      pushToken(
+        char === '(' || char === ')' || char === ',' || char === '?' || char === ':'
+          ? 'punctuation'
+          : 'operator',
+        char,
+        start,
+      );
       index += 1;
       continue;
     }
 
-    if (char === '\'' || char === '"') {
+    if (char === "'" || char === '"') {
       const quote = char;
       index += 1;
       let value = '';
@@ -343,8 +358,8 @@ function tokenize(expression: string): Token[] {
             case '\\':
               value += '\\';
               break;
-            case '\'':
-              value += '\'';
+            case "'":
+              value += "'";
               break;
             case '"':
               value += '"';
@@ -588,7 +603,9 @@ class Parser {
       return expression;
     }
 
-    throw new Error(`Unexpected token "${token.value || 'end of expression'}" at character ${token.index + 1}.`);
+    throw new Error(
+      `Unexpected token "${token.value || 'end of expression'}" at character ${token.index + 1}.`,
+    );
   }
 
   private match(type: Token['type'], value?: string) {
@@ -617,7 +634,11 @@ class Parser {
   }
 }
 
-function compareValues(left: ExpressionValue, right: ExpressionValue, operator: '<' | '<=' | '>' | '>=') {
+function compareValues(
+  left: ExpressionValue,
+  right: ExpressionValue,
+  operator: '<' | '<=' | '>' | '>=',
+) {
   if (typeof left === 'number' && typeof right === 'number') {
     switch (operator) {
       case '<':

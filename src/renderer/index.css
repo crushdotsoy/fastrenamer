@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap");
 
 @import "tailwindcss";
 
@@ -33,31 +33,39 @@
 /* ── Default theme fallback ─────────────────────────────────────────────────── */
 @layer base {
   :root {
-    --background:        #080c14;
-    --foreground:        #e6ecf8;
-    --card:              #0d1322;
-    --card-foreground:   #e6ecf8;
-    --surface:           #121929;
-    --surface-elevated:  #19223a;
-    --border:            #1c2840;
-    --muted:             #121929;
-    --muted-foreground:  #68739a;
-    --accent:            #4e8fff;
+    --background: #080c14;
+    --foreground: #e6ecf8;
+    --card: #0d1322;
+    --card-foreground: #e6ecf8;
+    --surface: #121929;
+    --surface-elevated: #19223a;
+    --border: #1c2840;
+    --muted: #121929;
+    --muted-foreground: #68739a;
+    --accent: #4e8fff;
     --accent-foreground: #080c14;
-    --destructive:       #f87171;
-    --ring:              #4e8fff;
-    --status-ok:         #34d399;
-    --status-conflict:   #f87171;
-    --status-invalid:    #fb923c;
-    --status-unchanged:  #64748b;
+    --destructive: #f87171;
+    --ring: #4e8fff;
+    --status-ok: #34d399;
+    --status-conflict: #f87171;
+    --status-invalid: #fb923c;
+    --status-unchanged: #64748b;
   }
 }
 
 /* ── Base resets ────────────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
-html { color-scheme: dark; }
-html[data-color-scheme="light"] { color-scheme: light; }
+html {
+  color-scheme: dark;
+}
+html[data-color-scheme="light"] {
+  color-scheme: light;
+}
 
 body {
   margin: 0;
@@ -76,23 +84,52 @@ body {
 
 html[data-theme="charmbracelet"] body {
   background-image:
-    linear-gradient(140deg,
+    linear-gradient(
+      140deg,
       transparent 0 18%,
       color-mix(in srgb, #ff73e8 36%, transparent) 18% 33%,
       color-mix(in srgb, #6ddcff 28%, transparent) 33% 48%,
       transparent 48% 100%
     ),
-    radial-gradient(circle at 18% 20%, color-mix(in srgb, #ff73e8 34%, transparent) 0, transparent 24%),
-    radial-gradient(circle at 82% 30%, color-mix(in srgb, #6ddcff 26%, transparent) 0, transparent 22%),
-    radial-gradient(circle at 52% 74%, color-mix(in srgb, #f1ff94 14%, transparent) 0, transparent 18%),
-    radial-gradient(circle, color-mix(in srgb, var(--foreground) 5%, transparent) 1px, transparent 1px);
-  background-size: auto, auto, auto, auto, 22px 22px;
+    radial-gradient(
+      circle at 18% 20%,
+      color-mix(in srgb, #ff73e8 34%, transparent) 0,
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 82% 30%,
+      color-mix(in srgb, #6ddcff 26%, transparent) 0,
+      transparent 22%
+    ),
+    radial-gradient(
+      circle at 52% 74%,
+      color-mix(in srgb, #f1ff94 14%, transparent) 0,
+      transparent 18%
+    ),
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--foreground) 5%, transparent) 1px,
+      transparent 1px
+    );
+  background-size:
+    auto,
+    auto,
+    auto,
+    auto,
+    22px 22px;
   background-position: center, center, center, center, center;
 }
 
-#root { min-height: 100vh; }
+#root {
+  min-height: 100vh;
+}
 
-button, input, select, textarea { font: inherit; }
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
 
 .app-drag {
   -webkit-app-region: drag;
@@ -106,7 +143,17 @@ button, input, select, textarea { font: inherit; }
 }
 
 /* ── Custom scrollbar ───────────────────────────────────────────────────────── */
-::-webkit-scrollbar        { width: 5px; height: 5px; }
-::-webkit-scrollbar-track  { background: transparent; }
-::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}

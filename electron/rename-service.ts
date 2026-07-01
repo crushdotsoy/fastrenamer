@@ -1,12 +1,5 @@
-import fs from 'node:fs';
+import fs, { promises as fsp } from 'node:fs';
 import path from 'node:path';
-import { promises as fsp } from 'node:fs';
-import {
-  compareNatural,
-  generatePreview,
-  normalizePathKey,
-  sortItemsByMode,
-} from '@fast-renamer/rename-engine';
 import type {
   ExecuteRenameBatchRequest,
   ExecuteRenameBatchResult,
@@ -19,6 +12,12 @@ import type {
   SourceMode,
   SourceSelection,
   UndoRenameBatchResult,
+} from '@fast-renamer/rename-engine';
+import {
+  compareNatural,
+  generatePreview,
+  normalizePathKey,
+  sortItemsByMode,
 } from '@fast-renamer/rename-engine';
 import { runRenamePlan } from './rename-plan';
 
@@ -113,7 +112,11 @@ async function resolveSourceItems(request: PreviewRequest): Promise<ResolvedRena
     if (options.requireFile && item.isDirectory) {
       return;
     }
-    if (!item.isDirectory && filePatterns.length > 0 && !matchesFilePatterns(item.name, filePatterns)) {
+    if (
+      !item.isDirectory &&
+      filePatterns.length > 0 &&
+      !matchesFilePatterns(item.name, filePatterns)
+    ) {
       return;
     }
 
@@ -127,7 +130,9 @@ async function resolveSourceItems(request: PreviewRequest): Promise<ResolvedRena
 
   const walkMode = async (directoryPath: string, mode: SourceMode, depth = 1) => {
     const entries = await fsp.readdir(directoryPath, { withFileTypes: true });
-    const orderedEntries = [...entries].sort((left, right) => compareNatural(left.name, right.name));
+    const orderedEntries = [...entries].sort((left, right) =>
+      compareNatural(left.name, right.name),
+    );
     for (const entry of orderedEntries) {
       const childPath = path.join(directoryPath, entry.name);
       switch (mode) {
@@ -201,7 +206,6 @@ function escapeFilePattern(pattern: string) {
 function matchesFilePatterns(fileName: string, patterns: RegExp[]) {
   return patterns.some((pattern) => pattern.test(fileName));
 }
-
 
 export async function generatePreviewForRequest(request: PreviewRequest): Promise<PreviewResult> {
   const items = await resolveSourceItems(request);
@@ -324,7 +328,10 @@ function buildUndoPreflightIssues(
 
   return issues.filter(
     (issue, index, all) =>
-      index === all.findIndex((candidate) => candidate.code === issue.code && candidate.message === issue.message),
+      index ===
+      all.findIndex(
+        (candidate) => candidate.code === issue.code && candidate.message === issue.message,
+      ),
   );
 }
 
@@ -402,7 +409,15 @@ export async function undoRenameBatch(
     renamedCount: batchItems.length,
     sourceRoots: [],
     rules: [],
-    previewSummary: { total: 0, changed: 0, ok: 0, conflict: 0, invalid: 0, unchanged: 0, blocked: false },
+    previewSummary: {
+      total: 0,
+      changed: 0,
+      ok: 0,
+      conflict: 0,
+      invalid: 0,
+      unchanged: 0,
+      blocked: false,
+    },
     canUndo: true,
     undoState: 'ready' as const,
     undoReason: undefined,

@@ -2,9 +2,7 @@ const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('advancedRenamer', {
   getDroppedPaths: (files) =>
-    files
-      .map((file) => webUtils.getPathForFile(file))
-      .filter((pathname) => pathname.length > 0),
+    files.map((file) => webUtils.getPathForFile(file)).filter((pathname) => pathname.length > 0),
   pickSources: (request) => ipcRenderer.invoke('pickSources', request),
   resolveSources: (paths) => ipcRenderer.invoke('resolveSources', paths),
   loadDirectoryItems: (paths) => ipcRenderer.invoke('loadDirectoryItems', paths),

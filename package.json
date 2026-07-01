@@ -4,7 +4,9 @@
   "description": "Desktop batch renaming utility built with Bun, Electron, React, and TypeScript.",
   "author": "crushdotsoy",
   "type": "module",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "main": "dist-electron/main.js",
   "license": "MIT",
   "scripts": {
@@ -17,6 +19,8 @@
     "electron:build:win": "bun run build && electron-builder --win --publish never",
     "electron:build:linux": "bun run build && electron-builder --linux --publish never",
     "typecheck": "tsc -b --pretty false",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -90,6 +94,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.2",
     "@tailwindcss/vite": "^4.3.2",
     "@types/node": "^26.0.1",
     "@types/react": "^19.2.17",

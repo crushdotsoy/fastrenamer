@@ -1,4 +1,6 @@
 import path from 'node:path';
+import { evaluateCustomRuleExpression } from './custom-rule';
+import { sortItemsByMode } from './sort';
 import type {
   CaseTransformRule,
   PlatformTarget,
@@ -8,8 +10,6 @@ import type {
   ResolvedRenameItem,
   SortMode,
 } from './types';
-import { evaluateCustomRuleExpression } from './custom-rule';
-import { sortItemsByMode } from './sort';
 
 interface NameParts {
   stem: string;
@@ -233,41 +233,49 @@ function renderNewNameTemplate(
 ) {
   const originalParts = splitName(originalName, isDirectory);
   const parentName = path.basename(context.parentPath);
-  const sequenceIndex = reverseSequence ? Math.max(0, context.total - context.index - 1) : context.index;
+  const sequenceIndex = reverseSequence
+    ? Math.max(0, context.total - context.index - 1)
+    : context.index;
   const letterSequenceValue = context.index + 1;
   const reverseLetterSequenceValue = Math.max(1, context.total - context.index);
 
-  return template.replaceAll(/\{([a-z_]+)(?::([^}]+))?\}/gi, (token, rawKey: string, rawArg?: string) => {
-    const key = rawKey.toLowerCase();
-    switch (key) {
-      case 'current':
-      case 'current_stem':
-        return currentParts.stem;
-      case 'original':
-      case 'original_stem':
-        return originalParts.stem;
-      case 'parent':
-      case 'parent_name':
-        return parentName;
-      case 'seq':
-      case 'seq_num':
-        return formatSequenceToken(sequenceIndex, rawArg);
-      case 'seq_letter':
-      case 'letter_seq':
-        return formatLetterSequence(letterSequenceValue, parseLetterSequenceCasing(rawArg));
-      case 'seq_letter_rev':
-      case 'seq_letter_reverse':
-      case 'reverse_seq_letter':
-      case 'reverse_letter_seq':
-        return formatLetterSequence(reverseLetterSequenceValue, parseLetterSequenceCasing(rawArg));
-      case 'date':
-        return formatDateToken(now, rawArg || 'YYYY-MM-DD');
-      case 'time':
-        return formatDateToken(now, rawArg || 'HHmmss');
-      default:
-        return token;
-    }
-  });
+  return template.replaceAll(
+    /\{([a-z_]+)(?::([^}]+))?\}/gi,
+    (token, rawKey: string, rawArg?: string) => {
+      const key = rawKey.toLowerCase();
+      switch (key) {
+        case 'current':
+        case 'current_stem':
+          return currentParts.stem;
+        case 'original':
+        case 'original_stem':
+          return originalParts.stem;
+        case 'parent':
+        case 'parent_name':
+          return parentName;
+        case 'seq':
+        case 'seq_num':
+          return formatSequenceToken(sequenceIndex, rawArg);
+        case 'seq_letter':
+        case 'letter_seq':
+          return formatLetterSequence(letterSequenceValue, parseLetterSequenceCasing(rawArg));
+        case 'seq_letter_rev':
+        case 'seq_letter_reverse':
+        case 'reverse_seq_letter':
+        case 'reverse_letter_seq':
+          return formatLetterSequence(
+            reverseLetterSequenceValue,
+            parseLetterSequenceCasing(rawArg),
+          );
+        case 'date':
+          return formatDateToken(now, rawArg || 'YYYY-MM-DD');
+        case 'time':
+          return formatDateToken(now, rawArg || 'HHmmss');
+        default:
+          return token;
+      }
+    },
+  );
 }
 
 export function applyRulesToName(
@@ -316,7 +324,10 @@ export function applyRulesToName(
           parts = splitName(nextName, isDirectory);
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Custom rule failed.';
-          throw new RenameRuleExecutionError(`Custom rule failed: ${message}`, joinName(parts, isDirectory));
+          throw new RenameRuleExecutionError(
+            `Custom rule failed: ${message}`,
+            joinName(parts, isDirectory),
+          );
         }
         break;
       }
@@ -551,7 +562,10 @@ export function generatePreview(options: PreviewBuildOptions): PreviewResult {
     const finalDirectoryPath = resolveFinalDirectoryPath(item);
     const nextPath = path.join(finalDirectoryPath, proposedName);
     const changed = item.sourcePath !== nextPath;
-    const reasons = [...executionReasons, ...validateName(proposedName, platform, item.isDirectory)];
+    const reasons = [
+      ...executionReasons,
+      ...validateName(proposedName, platform, item.isDirectory),
+    ];
     const rowId = normalizePathKey(item.sourcePath, platform);
     if (reasons.length > 0) {
       invalidIds.add(rowId);

@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
-import { compareNatural } from '@fast-renamer/rename-engine';
 import type { RenameRule } from '@fast-renamer/rename-engine';
+import { compareNatural } from '@fast-renamer/rename-engine';
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
 import {
-  pickSourcesRequestSchema,
   executeRenameBatchRequestSchema,
+  pickSourcesRequestSchema,
   previewRequestSchema,
   undoRenameBatchRequestSchema,
 } from '../src/shared/contracts';
@@ -135,7 +135,9 @@ function registerIpc() {
 
   ipcMain.handle('loadDirectoryItems', async (_event, paths: string[]) => {
     const directoryPaths = [...paths].sort(compareNatural);
-    const listings = await Promise.all(directoryPaths.map((sourcePath) => loadDirectoryListing(sourcePath)));
+    const listings = await Promise.all(
+      directoryPaths.map((sourcePath) => loadDirectoryListing(sourcePath)),
+    );
     return listings;
   });
 
@@ -156,8 +158,10 @@ function registerIpc() {
 
   ipcMain.handle('listPresets', () => database.listPresets());
 
-  ipcMain.handle('savePreset', (_event, payload: { id?: number; name: string; rules: RenameRule[] }) =>
-    database.savePreset(payload),
+  ipcMain.handle(
+    'savePreset',
+    (_event, payload: { id?: number; name: string; rules: RenameRule[] }) =>
+      database.savePreset(payload),
   );
 
   ipcMain.handle('deletePreset', (_event, presetId: number) => {

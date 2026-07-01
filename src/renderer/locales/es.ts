@@ -2,9 +2,11 @@ import { en } from './en';
 
 export const es = {
   ...en,
-  'topbar.tagline': (vars?: Record<string, unknown>) => `v${vars?.version ?? ''} · renombrado por lotes`,
+  'topbar.tagline': (vars?: Record<string, unknown>) =>
+    `v${vars?.version ?? ''} · renombrado por lotes`,
   'locale.label': 'Idioma',
-  'locale.helper': 'Cambia el idioma de la aplicacion. Las traducciones de la comunidad viven en src/renderer/locales.',
+  'locale.helper':
+    'Cambia el idioma de la aplicacion. Las traducciones de la comunidad viven en src/renderer/locales.',
   'settings.language': 'Idioma',
   'settings.appearance': 'Apariencia',
   'settings.title': 'Ajustes',
@@ -22,8 +24,10 @@ export const es = {
   'updates.check_now': 'Buscar ahora',
   'updates.download': 'Descargar actualizacion',
   'updates.restart_install': 'Reiniciar para instalar',
-  'updates.summary.up_to_date_manual': 'Esta instalacion coincide con la ultima release publicada. Las futuras actualizaciones abriran GitHub para una descarga manual.',
-  'updates.summary.idle_manual': 'Esta build busca actualizaciones, pero las instalaciones deben descargarse manualmente desde GitHub Releases.',
+  'updates.summary.up_to_date_manual':
+    'Esta instalacion coincide con la ultima release publicada. Las futuras actualizaciones abriran GitHub para una descarga manual.',
+  'updates.summary.idle_manual':
+    'Esta build busca actualizaciones, pero las instalaciones deben descargarse manualmente desde GitHub Releases.',
   'appearance.cycle': 'Cambiar',
   'appearance.new_custom': 'Nuevo personalizado desde el actual',
 } as const;

@@ -5,6 +5,7 @@ import * as SelectPrimitive from '@radix-ui/react-select';
 import * as SwitchPrimitive from '@radix-ui/react-switch';
 import * as ToastPrimitive from '@radix-ui/react-toast';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
+import { clsx } from 'clsx';
 import { Check, ChevronDown, ChevronUp, X } from 'lucide-react';
 import type {
   ButtonHTMLAttributes,
@@ -15,7 +16,6 @@ import type {
   ReactNode,
 } from 'react';
 import { forwardRef } from 'react';
-import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: Array<string | false | null | undefined>) {
@@ -41,12 +41,10 @@ export function Button({
         'disabled:cursor-not-allowed disabled:opacity-40',
         size === 'sm' && 'h-7 gap-1.5 px-2.5 text-xs',
         size === 'md' && 'h-9 gap-2 px-3.5 text-sm',
-        variant === 'default' &&
-          'bg-accent text-accent-foreground shadow-sm hover:opacity-90',
+        variant === 'default' && 'bg-accent text-accent-foreground shadow-sm hover:opacity-90',
         variant === 'secondary' &&
           'border border-border bg-surface text-foreground hover:bg-surface-elevated hover:border-accent/30',
-        variant === 'ghost' &&
-          'text-muted-foreground hover:bg-surface hover:text-foreground',
+        variant === 'ghost' && 'text-muted-foreground hover:bg-surface hover:text-foreground',
         variant === 'danger' &&
           'border border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/20',
         variant === 'outline' &&
@@ -58,10 +56,7 @@ export function Button({
   );
 }
 
-export function IconButton({
-  className,
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement>) {
+export function IconButton({ className, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       className={cn(
@@ -227,7 +222,11 @@ export const SelectSeparator = forwardRef<
   ElementRef<typeof SelectPrimitive.Separator>,
   ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
 >(({ className, ...props }, ref) => (
-  <SelectPrimitive.Separator ref={ref} className={cn('-mx-1 my-1 h-px bg-border', className)} {...props} />
+  <SelectPrimitive.Separator
+    ref={ref}
+    className={cn('-mx-1 my-1 h-px bg-border', className)}
+    {...props}
+  />
 ));
 SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
 
@@ -266,7 +265,11 @@ export function Checkbox({
           <Check className="h-3.5 w-3.5" strokeWidth={3} />
         </CheckboxPrimitive.Indicator>
       </CheckboxPrimitive.Root>
-      {label && <span className="text-sm leading-none text-muted-foreground peer-disabled:opacity-70">{label}</span>}
+      {label && (
+        <span className="text-sm leading-none text-muted-foreground peer-disabled:opacity-70">
+          {label}
+        </span>
+      )}
     </label>
   );
 }
@@ -354,7 +357,10 @@ export function Panel({ className, children, ...props }: HTMLAttributes<HTMLDivE
   return (
     <section
       {...props}
-      className={cn('flex flex-col overflow-hidden rounded-xl border border-border bg-card', className)}
+      className={cn(
+        'flex flex-col overflow-hidden rounded-xl border border-border bg-card',
+        className,
+      )}
     >
       {children}
     </section>
@@ -467,10 +473,7 @@ export function DropdownMenuItem({
   );
 }
 
-export function DropdownMenuLabel({
-  className,
-  ...props
-}: HTMLAttributes<HTMLDivElement>) {
+export function DropdownMenuLabel({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
@@ -614,20 +617,24 @@ export function Toast({
 }
 
 export function ToastTitle({ className, ...props }: ToastPrimitive.ToastTitleProps) {
-  return <ToastPrimitive.Title className={cn('text-sm font-semibold text-foreground', className)} {...props} />;
+  return (
+    <ToastPrimitive.Title
+      className={cn('text-sm font-semibold text-foreground', className)}
+      {...props}
+    />
+  );
 }
 
-export function ToastDescription({
-  className,
-  ...props
-}: ToastPrimitive.ToastDescriptionProps) {
-  return <ToastPrimitive.Description className={cn('mt-1 text-xs text-muted-foreground', className)} {...props} />;
+export function ToastDescription({ className, ...props }: ToastPrimitive.ToastDescriptionProps) {
+  return (
+    <ToastPrimitive.Description
+      className={cn('mt-1 text-xs text-muted-foreground', className)}
+      {...props}
+    />
+  );
 }
 
-export function ToastAction({
-  className,
-  ...props
-}: ToastPrimitive.ToastActionProps) {
+export function ToastAction({ className, ...props }: ToastPrimitive.ToastActionProps) {
   return (
     <ToastPrimitive.Action
       className={cn(

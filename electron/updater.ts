@@ -1,8 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
-import { app, BrowserWindow } from 'electron';
-import electronUpdater from 'electron-updater';
+import { app, type BrowserWindow } from 'electron';
 import type { ProgressInfo, UpdateDownloadedEvent, UpdateInfo } from 'electron-updater';
+import electronUpdater from 'electron-updater';
 import type { UpdateState } from '../src/shared/contracts';
 
 const { autoUpdater } = electronUpdater;
@@ -65,7 +65,10 @@ function getReleaseDownloadUrl(version?: string) {
   return `${GITHUB_RELEASES_URL}/tag/v${version}`;
 }
 
-function toBaseState(info: UpdateInfo | UpdateDownloadedEvent | undefined, previousState?: UpdateState) {
+function toBaseState(
+  info: UpdateInfo | UpdateDownloadedEvent | undefined,
+  previousState?: UpdateState,
+) {
   return {
     currentVersion: app.getVersion(),
     availableVersion: info?.version ?? previousState?.availableVersion,
@@ -109,7 +112,8 @@ export class AppUpdaterManager {
       return;
     }
 
-    this.manualDownloadMessage = getMacManualDownloadMessage() ?? getWindowsPortableManualDownloadMessage();
+    this.manualDownloadMessage =
+      getMacManualDownloadMessage() ?? getWindowsPortableManualDownloadMessage();
     this.manualDownloadOnly = Boolean(this.manualDownloadMessage);
 
     if (this.manualDownloadOnly) {
@@ -183,7 +187,9 @@ export class AppUpdaterManager {
         status: 'error',
         checkedAt: new Date().toISOString(),
         manualDownloadOnly: this.manualDownloadOnly,
-        downloadUrl: this.manualDownloadOnly ? `${GITHUB_RELEASES_URL}/latest` : this.state.downloadUrl,
+        downloadUrl: this.manualDownloadOnly
+          ? `${GITHUB_RELEASES_URL}/latest`
+          : this.state.downloadUrl,
         message: error.message || 'Failed to check for updates.',
       });
     });
@@ -220,7 +226,9 @@ export class AppUpdaterManager {
         status: 'error',
         checkedAt: new Date().toISOString(),
         manualDownloadOnly: this.manualDownloadOnly,
-        downloadUrl: this.manualDownloadOnly ? `${GITHUB_RELEASES_URL}/latest` : this.state.downloadUrl,
+        downloadUrl: this.manualDownloadOnly
+          ? `${GITHUB_RELEASES_URL}/latest`
+          : this.state.downloadUrl,
         message,
       });
     } finally {

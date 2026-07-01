@@ -2,9 +2,11 @@ import { en } from './en';
 
 export const fr = {
   ...en,
-  'topbar.tagline': (vars?: Record<string, unknown>) => `v${vars?.version ?? ''} · renommage par lot`,
+  'topbar.tagline': (vars?: Record<string, unknown>) =>
+    `v${vars?.version ?? ''} · renommage par lot`,
   'locale.label': 'Langue',
-  'locale.helper': 'Change la langue de l application. Les traductions de la communaute se trouvent dans src/renderer/locales.',
+  'locale.helper':
+    'Change la langue de l application. Les traductions de la communaute se trouvent dans src/renderer/locales.',
   'settings.language': 'Langue',
   'settings.appearance': 'Apparence',
   'settings.title': 'Parametres',
@@ -22,8 +24,10 @@ export const fr = {
   'updates.check_now': 'Verifier',
   'updates.download': 'Telecharger la mise a jour',
   'updates.restart_install': 'Redemarrer pour installer',
-  'updates.summary.up_to_date_manual': 'Cette installation correspond a la derniere release publiee. Les prochaines mises a jour ouvriront GitHub pour un telechargement manuel.',
-  'updates.summary.idle_manual': 'Cette build verifie les mises a jour, mais les installations doivent etre telechargees manuellement depuis GitHub Releases.',
+  'updates.summary.up_to_date_manual':
+    'Cette installation correspond a la derniere release publiee. Les prochaines mises a jour ouvriront GitHub pour un telechargement manuel.',
+  'updates.summary.idle_manual':
+    'Cette build verifie les mises a jour, mais les installations doivent etre telechargees manuellement depuis GitHub Releases.',
   'appearance.cycle': 'Changer',
   'appearance.new_custom': 'Nouveau theme personnalise',
 } as const;

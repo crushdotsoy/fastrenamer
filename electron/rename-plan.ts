@@ -1,7 +1,7 @@
-import path from 'node:path';
 import { promises as fsp } from 'node:fs';
-import { compareNatural, normalizePathKey } from '@fast-renamer/rename-engine';
+import path from 'node:path';
 import type { PlatformTarget, RenameBatchRecord } from '@fast-renamer/rename-engine';
+import { compareNatural, normalizePathKey } from '@fast-renamer/rename-engine';
 
 interface RenameOperation extends RenameBatchRecord {
   tempName: string;
@@ -51,7 +51,13 @@ function resolvePathForState(
   const operation = operations.get(key);
   if (operation) {
     const state = stateMap.get(key) ?? 'source';
-    const parentResolved = resolvePathForState(path.dirname(operation.sourcePath), platform, operations, stateMap, memo);
+    const parentResolved = resolvePathForState(
+      path.dirname(operation.sourcePath),
+      platform,
+      operations,
+      stateMap,
+      memo,
+    );
     const name =
       state === 'temp'
         ? operation.tempName
@@ -71,7 +77,9 @@ function resolvePathForState(
 
   const resolvedParent = resolvePathForState(parentPath, platform, operations, stateMap, memo);
   const resolved =
-    resolvedParent === parentPath ? originalPath : path.join(resolvedParent, path.basename(originalPath));
+    resolvedParent === parentPath
+      ? originalPath
+      : path.join(resolvedParent, path.basename(originalPath));
   memo.set(cacheKey, resolved);
   return resolved;
 }
@@ -79,7 +87,10 @@ function resolvePathForState(
 export async function runRenamePlan(platform: PlatformTarget, items: RenameBatchRecord[]) {
   const operationsList = buildOperations(items);
   const operations = new Map(
-    operationsList.map((operation) => [normalizePathKey(operation.sourcePath, platform), operation]),
+    operationsList.map((operation) => [
+      normalizePathKey(operation.sourcePath, platform),
+      operation,
+    ]),
   );
   const stateMap = new Map<string, 'source' | 'temp' | 'target'>();
 

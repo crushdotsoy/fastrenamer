@@ -5,7 +5,8 @@ const value = (vars: Record<string, unknown> | undefined, key: string) => vars?.
 
 export const ptPT = {
   'locale.label': 'Idioma',
-  'locale.helper': 'Muda o idioma da aplicacao. As traducoes da comunidade ficam em src/renderer/locales.',
+  'locale.helper':
+    'Muda o idioma da aplicacao. As traducoes da comunidade ficam em src/renderer/locales.',
   'locale.option.en': 'Ingles',
   'locale.option.pt-PT': 'Portugues (Portugal)',
 
@@ -20,16 +21,19 @@ export const ptPT = {
   'source.mode.picked_files.detail': 'Escolha ficheiros individualmente.',
   'source.mode.top_level_folders.label': 'Pastas de topo',
   'source.mode.top_level_folders.picker': 'Adicionar Pastas',
-  'source.mode.top_level_folders.detail': 'Renomeia as pastas filhas diretas dentro de cada pasta raiz selecionada.',
+  'source.mode.top_level_folders.detail':
+    'Renomeia as pastas filhas diretas dentro de cada pasta raiz selecionada.',
   'source.mode.subfolders.label': 'Subpastas',
   'source.mode.subfolders.picker': 'Adicionar Pastas',
   'source.mode.subfolders.detail': 'Renomeia pastas aninhadas abaixo do topo.',
   'source.mode.top_level_files.label': 'Ficheiros de topo',
   'source.mode.top_level_files.picker': 'Adicionar Pastas',
-  'source.mode.top_level_files.detail': 'Renomeia os ficheiros filhos diretos dentro de cada pasta raiz selecionada.',
+  'source.mode.top_level_files.detail':
+    'Renomeia os ficheiros filhos diretos dentro de cada pasta raiz selecionada.',
   'source.mode.files_recursive.label': 'Ficheiros recursivos',
   'source.mode.files_recursive.picker': 'Adicionar Pastas',
-  'source.mode.files_recursive.detail': 'Renomeia ficheiros a qualquer profundidade dentro de cada pasta raiz selecionada.',
+  'source.mode.files_recursive.detail':
+    'Renomeia ficheiros a qualquer profundidade dentro de cada pasta raiz selecionada.',
 
   'rule.new_name': 'Novo Nome',
   'rule.custom_rule': 'Regra Personalizada',
@@ -64,7 +68,8 @@ export const ptPT = {
   'new_name.starter.folder': 'Pasta + numero',
   'new_name.starter.date': 'Data + numero',
 
-  'topbar.tagline': (vars?: Record<string, unknown>) => `v${value(vars, 'version')} · renomeacao em lote`,
+  'topbar.tagline': (vars?: Record<string, unknown>) =>
+    `v${value(vars, 'version')} · renomeacao em lote`,
   'topbar.add': 'Adicionar',
   'topbar.clear': 'Limpar',
   'topbar.presets': 'Predefinicoes',
@@ -76,7 +81,8 @@ export const ptPT = {
   'topbar.themes': 'Temas',
   'topbar.theme_custom': 'Personalizado',
   'topbar.theme_preset': 'Base',
-  'topbar.choose_theme_aria': (vars?: Record<string, unknown>) => `Escolher tema. Tema atual: ${value(vars, 'themeName') ?? ''}`,
+  'topbar.choose_theme_aria': (vars?: Record<string, unknown>) =>
+    `Escolher tema. Tema atual: ${value(vars, 'themeName') ?? ''}`,
   'topbar.minimize': 'Minimizar',
   'topbar.minimize_window': 'Minimizar janela',
   'topbar.restore_down': 'Restaurar',
@@ -86,9 +92,11 @@ export const ptPT = {
   'topbar.close': 'Fechar',
   'topbar.close_window': 'Fechar janela',
   'topbar.status.ok': (vars?: Record<string, unknown>) => `${value(vars, 'count')} ok`,
-  'topbar.status.conflicts': (vars?: Record<string, unknown>) => `${value(vars, 'count')} conflitos`,
+  'topbar.status.conflicts': (vars?: Record<string, unknown>) =>
+    `${value(vars, 'count')} conflitos`,
   'topbar.status.invalid': (vars?: Record<string, unknown>) => `${value(vars, 'count')} invalidos`,
-  'topbar.status.unchanged': (vars?: Record<string, unknown>) => `${value(vars, 'count')} sem alteracoes`,
+  'topbar.status.unchanged': (vars?: Record<string, unknown>) =>
+    `${value(vars, 'count')} sem alteracoes`,
   'topbar.busy.preview': 'A gerar previsualizacao...',
   'topbar.busy.execute': 'A renomear...',
   'topbar.busy.undo': 'A desfazer...',
@@ -117,13 +125,16 @@ export const ptPT = {
   'rules.delete': 'Apagar regra',
 
   'editor.new_name.placeholder': 'name_{seq_num:0001}',
-  'editor.new_name.help': 'Clique num token para o inserir onde o cursor esta. As extensoes mantem-se, a menos que adicione uma regra de Extensao.',
+  'editor.new_name.help':
+    'Clique num token para o inserir onde o cursor esta. As extensoes mantem-se, a menos que adicione uma regra de Extensao.',
   'editor.new_name.reverse_sequence': 'Sequencia inversa',
   'editor.new_name.quick_insert': 'Insercao Rapida',
   'editor.new_name.starters': 'Modelos Iniciais',
   'editor.custom.beta': 'Beta',
-  'editor.custom.help': 'Regra avancada por expressao. Corre em seguranca na previsualizacao e tem de devolver o nome final completo.',
-  'editor.custom.return_label': 'Use valores como currentName, originalStem, parent, index e ext(extension) para construir o nome final do ficheiro ou da pasta.',
+  'editor.custom.help':
+    'Regra avancada por expressao. Corre em seguranca na previsualizacao e tem de devolver o nome final completo.',
+  'editor.custom.return_label':
+    'Use valores como currentName, originalStem, parent, index e ext(extension) para construir o nome final do ficheiro ou da pasta.',
   'editor.custom.placeholder': 'snake(originalStem) + "_" + pad(index, 3) + ext(lower(extension))',
   'editor.custom.quick_insert': 'Insercao Rapida',
   'editor.custom.examples': 'Exemplos',
@@ -168,12 +179,14 @@ export const ptPT = {
   'sources.add.title': 'Adicionar Origens',
   'sources.add.description': 'Escolha que tipo de itens quer renomear antes de abrir o seletor.',
   'sources.add.dropped_title': 'Usar Itens Largados',
-  'sources.add.dropped_description': 'Escolha como o Fast Renamer deve interpretar as pastas ou ficheiros largados.',
+  'sources.add.dropped_description':
+    'Escolha como o Fast Renamer deve interpretar as pastas ou ficheiros largados.',
   'sources.set': 'Conjunto de Origem',
   'sources.filter': 'Filtro de Ficheiros',
   'sources.filter.placeholder': '*.tif, *.tiff',
   'sources.filter.help_supported': 'Filtros glob opcionais. Suporta * e ?, separados por virgulas.',
-  'sources.filter.help_unsupported': 'Os filtros so sao usados quando o conjunto de origem aponta para ficheiros.',
+  'sources.filter.help_unsupported':
+    'Os filtros so sao usados quando o conjunto de origem aponta para ficheiros.',
   'sources.current': 'Conjunto de origem atual',
   'sources.dropped': 'Itens largados',
   'sources.roots': (vars?: Record<string, unknown>) => `${value(vars, 'count')} raizes escolhidas`,
@@ -183,7 +196,8 @@ export const ptPT = {
   'common.cancel': 'Cancelar',
 
   'presets.title': 'Predefinicoes',
-  'presets.description': 'Pilhas de exemplo para descoberta e predefinicoes reutilizaveis do utilizador.',
+  'presets.description':
+    'Pilhas de exemplo para descoberta e predefinicoes reutilizaveis do utilizador.',
   'presets.save_stack': 'Guardar Pilha Atual',
   'presets.name.placeholder': 'A minha predefinicao...',
   'presets.save': 'Guardar predefinicao',
@@ -197,7 +211,8 @@ export const ptPT = {
   'presets.load': 'Carregar',
   'presets.edit_name': 'Editar nome',
   'common.delete': 'Apagar',
-  'presets.rules_count': (vars?: Record<string, unknown>) => plural(Number(value(vars, 'count') ?? 0), 'regra', 'regras'),
+  'presets.rules_count': (vars?: Record<string, unknown>) =>
+    plural(Number(value(vars, 'count') ?? 0), 'regra', 'regras'),
 
   'history.title': 'Historico de Renomeacoes',
   'history.description': 'Lotes concluidos guardados para auditoria e desfazer com um clique.',
@@ -231,28 +246,37 @@ export const ptPT = {
   'updates.status.up_to_date': 'atualizada',
   'updates.status.installing': 'a instalar',
   'updates.status.error': 'erro de atualizacao',
-  'updates.summary.disabled': 'Instale uma release empacotada do GitHub para ativar atualizacoes automaticas.',
+  'updates.summary.disabled':
+    'Instale uma release empacotada do GitHub para ativar atualizacoes automaticas.',
   'updates.summary.checking': 'A verificar se existe uma versao mais recente no GitHub Releases.',
-  'updates.summary.available_manual': (vars?: Record<string, unknown>) => `A versao ${value(vars, 'version') ?? 'desconhecida'} esta disponivel para download no GitHub Releases.`,
-  'updates.summary.available_auto': (vars?: Record<string, unknown>) => `A versao ${value(vars, 'version') ?? 'desconhecida'} esta disponivel e a ser transferida em segundo plano.`,
-  'updates.summary.downloading_with_progress': (vars?: Record<string, unknown>) => `${value(vars, 'percent')}% transferido (${value(vars, 'transferred')} de ${value(vars, 'total')}).`,
+  'updates.summary.available_manual': (vars?: Record<string, unknown>) =>
+    `A versao ${value(vars, 'version') ?? 'desconhecida'} esta disponivel para download no GitHub Releases.`,
+  'updates.summary.available_auto': (vars?: Record<string, unknown>) =>
+    `A versao ${value(vars, 'version') ?? 'desconhecida'} esta disponivel e a ser transferida em segundo plano.`,
+  'updates.summary.downloading_with_progress': (vars?: Record<string, unknown>) =>
+    `${value(vars, 'percent')}% transferido (${value(vars, 'transferred')} de ${value(vars, 'total')}).`,
   'updates.summary.downloading': 'A transferir a ultima release em segundo plano.',
-  'updates.summary.downloaded': (vars?: Record<string, unknown>) => `A versao ${value(vars, 'version') ?? 'desconhecida'} esta pronta. Reinicie a aplicacao para instalar.`,
-  'updates.summary.up_to_date_manual': 'Esta instalacao corresponde a ultima release publicada. Atualizacoes futuras vao abrir o GitHub para download manual.',
+  'updates.summary.downloaded': (vars?: Record<string, unknown>) =>
+    `A versao ${value(vars, 'version') ?? 'desconhecida'} esta pronta. Reinicie a aplicacao para instalar.`,
+  'updates.summary.up_to_date_manual':
+    'Esta instalacao corresponde a ultima release publicada. Atualizacoes futuras vao abrir o GitHub para download manual.',
   'updates.summary.up_to_date': 'Esta instalacao ja corresponde a ultima release publicada.',
   'updates.summary.installing': 'A fechar a aplicacao para instalar a atualizacao transferida.',
   'updates.summary.error': 'A aplicacao nao conseguiu concluir a verificacao de atualizacoes.',
-  'updates.summary.idle_manual': 'Esta build verifica atualizacoes, mas a instalacao tem de ser descarregada manualmente no GitHub Releases.',
+  'updates.summary.idle_manual':
+    'Esta build verifica atualizacoes, mas a instalacao tem de ser descarregada manualmente no GitHub Releases.',
   'updates.summary.idle': 'As atualizacoes automaticas estao ativas para releases empacotadas.',
   'updates.current': (vars?: Record<string, unknown>) => `atual ${value(vars, 'version')}`,
   'updates.latest': (vars?: Record<string, unknown>) => `ultima ${value(vars, 'version')}`,
   'updates.checked': (vars?: Record<string, unknown>) => `verificado ${value(vars, 'date')}`,
-  'updates.speed': (vars?: Record<string, unknown>) => `${value(vars, 'percent')}% a ${value(vars, 'speed')}/s`,
+  'updates.speed': (vars?: Record<string, unknown>) =>
+    `${value(vars, 'percent')}% a ${value(vars, 'speed')}/s`,
   'updates.check_now': 'Verificar agora',
   'updates.download': 'Descarregar atualizacao',
   'updates.restart_install': 'Reiniciar para instalar',
   'updates.theme_library': 'Biblioteca de temas',
-  'updates.theme_library_help': 'Escolha um tema base e clone-o quando quiser criar a sua propria paleta.',
+  'updates.theme_library_help':
+    'Escolha um tema base e clone-o quando quiser criar a sua propria paleta.',
   'appearance.cycle': 'Alternar',
   'appearance.new_custom': 'Novo Personalizado a Partir do Atual',
   'appearance.active': 'Ativo',
@@ -265,24 +289,31 @@ export const ptPT = {
   'appearance.theme_name': 'Nome do tema',
   'appearance.theme_name_placeholder': 'Tema Personalizado',
   'appearance.editor_title': 'Editor de tema personalizado',
-  'appearance.editor_help': 'Os temas base sao apenas de leitura. Crie um tema personalizado a partir da selecao atual para editar todos os tokens.',
+  'appearance.editor_help':
+    'Os temas base sao apenas de leitura. Crie um tema personalizado a partir da selecao atual para editar todos os tokens.',
   'appearance.base.dark': 'escuro',
   'appearance.base.light': 'claro',
 
-  'platform_rules.description': (vars?: Record<string, unknown>) => `A validacao da previsualizacao usa as regras de nomes de ficheiros de ${value(vars, 'platform')}, para que conflitos e nomes invalidos reflitam a maquina atual.`,
-  'execution_profile.description': 'O renderer corre isolado com uma bridge de preload. Escritas no sistema de ficheiros so acontecem atraves da execucao validada do lote e do desfazer no processo principal do Electron.',
+  'platform_rules.description': (vars?: Record<string, unknown>) =>
+    `A validacao da previsualizacao usa as regras de nomes de ficheiros de ${value(vars, 'platform')}, para que conflitos e nomes invalidos reflitam a maquina atual.`,
+  'execution_profile.description':
+    'O renderer corre isolado com uma bridge de preload. Escritas no sistema de ficheiros so acontecem atraves da execucao validada do lote e do desfazer no processo principal do Electron.',
 
   'toast.update_found.title': 'Atualizacao encontrada',
-  'toast.update_found.description_manual': (vars?: Record<string, unknown>) => `A versao ${value(vars, 'version') ?? 'desconhecida'} esta disponivel no GitHub Releases para download manual.`,
-  'toast.update_found.description_auto': (vars?: Record<string, unknown>) => `A versao ${value(vars, 'version') ?? 'desconhecida'} esta a ser transferida em segundo plano.`,
+  'toast.update_found.description_manual': (vars?: Record<string, unknown>) =>
+    `A versao ${value(vars, 'version') ?? 'desconhecida'} esta disponivel no GitHub Releases para download manual.`,
+  'toast.update_found.description_auto': (vars?: Record<string, unknown>) =>
+    `A versao ${value(vars, 'version') ?? 'desconhecida'} esta a ser transferida em segundo plano.`,
   'toast.open_settings': 'Abrir definicoes',
   'toast.update_ready.title': 'Atualizacao pronta',
-  'toast.update_ready.description': (vars?: Record<string, unknown>) => `A versao ${value(vars, 'version') ?? 'desconhecida'} esta pronta a instalar.`,
+  'toast.update_ready.description': (vars?: Record<string, unknown>) =>
+    `A versao ${value(vars, 'version') ?? 'desconhecida'} esta pronta a instalar.`,
   'toast.restart_now': 'Reiniciar agora',
   'toast.update_failed.title': 'Atualizacao falhou',
 
   'theme.preset.dark.description': 'O tema original escuro.',
-  'theme.preset.charmbracelet.description': 'Baseado na paleta atual de creme, violeta e neon do charm.land.',
+  'theme.preset.charmbracelet.description':
+    'Baseado na paleta atual de creme, violeta e neon do charm.land.',
   'theme.preset.soycrush.description': 'Baseado na paleta atual lavanda e rosa do crush.soy.',
   'theme.preset.light.description': 'O tema original claro.',
   'theme.token.background.label': 'Fundo',
@@ -327,7 +358,10 @@ export const ptPT = {
   'error.generate_preview': 'Falha ao gerar a previsualizacao.',
   'error.preset_name_required': 'O nome da predefinicao e obrigatorio.',
   'selected.none': '0 selecionados',
-  'selected.folders': (vars?: Record<string, unknown>) => `${plural(Number(value(vars, 'count') ?? 0), 'pasta', 'pastas')} selecionadas`,
-  'selected.files': (vars?: Record<string, unknown>) => `${plural(Number(value(vars, 'count') ?? 0), 'ficheiro', 'ficheiros')} selecionados`,
-  'selected.items': (vars?: Record<string, unknown>) => `${plural(Number(value(vars, 'count') ?? 0), 'item', 'itens')} selecionados`,
+  'selected.folders': (vars?: Record<string, unknown>) =>
+    `${plural(Number(value(vars, 'count') ?? 0), 'pasta', 'pastas')} selecionadas`,
+  'selected.files': (vars?: Record<string, unknown>) =>
+    `${plural(Number(value(vars, 'count') ?? 0), 'ficheiro', 'ficheiros')} selecionados`,
+  'selected.items': (vars?: Record<string, unknown>) =>
+    `${plural(Number(value(vars, 'count') ?? 0), 'item', 'itens')} selecionados`,
 } as const;

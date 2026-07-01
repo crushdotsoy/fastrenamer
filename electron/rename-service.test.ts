@@ -2,8 +2,8 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { listHistoryWithUndoStatus, undoRenameBatch } from './rename-service';
 import { runRenamePlan } from './rename-plan';
+import { listHistoryWithUndoStatus, undoRenameBatch } from './rename-service';
 
 describe('runRenamePlan', () => {
   let tempRoot: string;
@@ -82,7 +82,15 @@ describe('undoRenameBatch safety checks', () => {
           renamedCount: 1,
           sourceRoots: [tempRoot],
           rules: [],
-          previewSummary: { total: 1, changed: 1, ok: 1, conflict: 0, invalid: 0, unchanged: 0, blocked: false },
+          previewSummary: {
+            total: 1,
+            changed: 1,
+            ok: 1,
+            conflict: 0,
+            invalid: 0,
+            unchanged: 0,
+            blocked: false,
+          },
           canUndo: true,
           undoState: 'ready',
           undoReason: undefined,
@@ -114,7 +122,15 @@ describe('undoRenameBatch safety checks', () => {
           renamedCount: 1,
           sourceRoots: [tempRoot],
           rules: [],
-          previewSummary: { total: 1, changed: 1, ok: 1, conflict: 0, invalid: 0, unchanged: 0, blocked: false },
+          previewSummary: {
+            total: 1,
+            changed: 1,
+            ok: 1,
+            conflict: 0,
+            invalid: 0,
+            unchanged: 0,
+            blocked: false,
+          },
           canUndo: true,
           undoState: 'ready',
           undoReason: undefined,
@@ -146,7 +162,15 @@ describe('undoRenameBatch safety checks', () => {
           renamedCount: 1,
           sourceRoots: [tempRoot],
           rules: [],
-          previewSummary: { total: 1, changed: 1, ok: 1, conflict: 0, invalid: 0, unchanged: 0, blocked: false },
+          previewSummary: {
+            total: 1,
+            changed: 1,
+            ok: 1,
+            conflict: 0,
+            invalid: 0,
+            unchanged: 0,
+            blocked: false,
+          },
           canUndo: true,
           undoState: 'ready',
           undoReason: undefined,
@@ -157,7 +181,15 @@ describe('undoRenameBatch safety checks', () => {
           renamedCount: 1,
           sourceRoots: [tempRoot],
           rules: [],
-          previewSummary: { total: 1, changed: 1, ok: 1, conflict: 0, invalid: 0, unchanged: 0, blocked: false },
+          previewSummary: {
+            total: 1,
+            changed: 1,
+            ok: 1,
+            conflict: 0,
+            invalid: 0,
+            unchanged: 0,
+            blocked: false,
+          },
           canUndo: true,
           undoState: 'ready',
           undoReason: undefined,
@@ -195,7 +227,15 @@ describe('undoRenameBatch safety checks', () => {
             renamedCount: 1,
             sourceRoots: [tempRoot],
             rules: [],
-            previewSummary: { total: 1, changed: 1, ok: 1, conflict: 0, invalid: 0, unchanged: 0, blocked: false },
+            previewSummary: {
+              total: 1,
+              changed: 1,
+              ok: 1,
+              conflict: 0,
+              invalid: 0,
+              unchanged: 0,
+              blocked: false,
+            },
             canUndo: true,
             undoState: 'ready',
             undoReason: undefined,
@@ -206,7 +246,15 @@ describe('undoRenameBatch safety checks', () => {
             renamedCount: 1,
             sourceRoots: [tempRoot],
             rules: [],
-            previewSummary: { total: 1, changed: 1, ok: 1, conflict: 0, invalid: 0, unchanged: 0, blocked: false },
+            previewSummary: {
+              total: 1,
+              changed: 1,
+              ok: 1,
+              conflict: 0,
+              invalid: 0,
+              unchanged: 0,
+              blocked: false,
+            },
             canUndo: true,
             undoState: 'ready',
             undoReason: undefined,

@@ -34,9 +34,7 @@ describe('applyRulesToName', () => {
         originalName: '  Final Report 2026.TXT  ',
         parentPath: '/tmp',
       }),
-    ).toBe(
-      'final_report_2026.txt  ',
-    );
+    ).toBe('final_report_2026.txt  ');
   });
 
   it('renders new-name templates with sequence and original stem tokens', () => {
@@ -335,10 +333,7 @@ describe('generatePreview', () => {
       existingPathExists: () => false,
     });
 
-    expect(preview.rows.map((row) => row.proposedName)).toEqual([
-      '1_file10.txt',
-      '2_file2.txt',
-    ]);
+    expect(preview.rows.map((row) => row.proposedName)).toEqual(['1_file10.txt', '2_file2.txt']);
   });
 
   it('sorts by file name before parent path in name-only mode', () => {

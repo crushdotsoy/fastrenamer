@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { en } from './locales/en';
+import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import { de } from './locales/de';
+import { en } from './locales/en';
 import { es } from './locales/es';
 import { fr } from './locales/fr';
 import { it } from './locales/it';
@@ -34,9 +34,9 @@ const LOCALE_METADATA: Record<AppLocale, { label: string; nativeLabel: string }>
 
 export const AVAILABLE_LOCALES: Array<{ code: AppLocale; label: string; nativeLabel: string }> = [
   { code: DEFAULT_LOCALE, ...LOCALE_METADATA[DEFAULT_LOCALE] },
-  ...((Object.keys(TRANSLATIONS) as AppLocale[])
+  ...(Object.keys(TRANSLATIONS) as AppLocale[])
     .filter((locale) => locale !== DEFAULT_LOCALE)
-    .map((code) => ({ code, ...LOCALE_METADATA[code] }))),
+    .map((code) => ({ code, ...LOCALE_METADATA[code] })),
 ];
 
 function interpolate(template: string, vars?: Record<string, unknown>) {
@@ -92,25 +92,28 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = locale;
   }, [locale]);
 
-  const value = useMemo<I18nContextValue>(() => ({
-    locale,
-    setLocale,
-    t(key, vars) {
-      const current = TRANSLATIONS[locale][key] ?? TRANSLATIONS.en[key];
-      const fallback = TRANSLATIONS[DEFAULT_LOCALE][key];
-      if (!current && !fallback) {
-        return key;
-      }
+  const value = useMemo<I18nContextValue>(
+    () => ({
+      locale,
+      setLocale,
+      t(key, vars) {
+        const current = TRANSLATIONS[locale][key] ?? TRANSLATIONS.en[key];
+        const fallback = TRANSLATIONS[DEFAULT_LOCALE][key];
+        if (!current && !fallback) {
+          return key;
+        }
 
-      const resolved = current ?? fallback;
+        const resolved = current ?? fallback;
 
-      if (typeof resolved === 'function') {
-        return resolved(vars);
-      }
+        if (typeof resolved === 'function') {
+          return resolved(vars);
+        }
 
-      return interpolate(resolved, vars);
-    },
-  }), [locale]);
+        return interpolate(resolved, vars);
+      },
+    }),
+    [locale],
+  );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

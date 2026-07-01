@@ -1,7 +1,6 @@
-import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
-import { app } from 'electron';
+import { DatabaseSync } from 'node:sqlite';
 import type {
   HistoryEntry,
   Preset,
@@ -9,6 +8,7 @@ import type {
   RenameBatchRecord,
   RenameRule,
 } from '@fast-renamer/rename-engine';
+import { app } from 'electron';
 
 const SAMPLE_PRESETS: Array<{ name: string; rules: RenameRule[] }> = [
   {
@@ -101,9 +101,9 @@ export class AppDatabase {
   }
 
   private migrate() {
-    const versionRow = this.database
-      .prepare('PRAGMA user_version;')
-      .get() as Record<string, unknown> | undefined;
+    const versionRow = this.database.prepare('PRAGMA user_version;').get() as
+      | Record<string, unknown>
+      | undefined;
     const version = Number(versionRow?.user_version ?? 0);
 
     if (version < 1) {
@@ -147,9 +147,9 @@ export class AppDatabase {
   private seedSamplePresets() {
     const existingNames = new Set(
       (
-        this.database
-          .prepare('SELECT name FROM presets WHERE is_sample = 1')
-          .all() as Array<Record<string, unknown>>
+        this.database.prepare('SELECT name FROM presets WHERE is_sample = 1').all() as Array<
+          Record<string, unknown>
+        >
       ).map((row) => String(row.name)),
     );
 
@@ -197,7 +197,7 @@ export class AppDatabase {
       if (!existing) {
         throw new Error(`Preset ${input.id} does not exist.`);
       }
-      if (Boolean(existing.is_sample)) {
+      if (existing.is_sample) {
         throw new Error('Sample presets are read-only.');
       }
 
@@ -237,14 +237,14 @@ export class AppDatabase {
   }
 
   deletePreset(id: number) {
-    const existing = this.database
-      .prepare('SELECT is_sample FROM presets WHERE id = ?')
-      .get(id) as Record<string, unknown> | undefined;
+    const existing = this.database.prepare('SELECT is_sample FROM presets WHERE id = ?').get(id) as
+      | Record<string, unknown>
+      | undefined;
 
     if (!existing) {
       return;
     }
-    if (Boolean(existing.is_sample)) {
+    if (existing.is_sample) {
       throw new Error('Sample presets cannot be deleted.');
     }
 

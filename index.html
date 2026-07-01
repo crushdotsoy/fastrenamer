@@ -79,7 +79,7 @@
         const snapshot = JSON.parse(localStorage.getItem('theme_snapshot') || 'null');
         const legacyTheme = localStorage.getItem('theme');
         const theme =
-          snapshot && snapshot.tokens
+          snapshot?.tokens
             ? snapshot
             : fallbackThemes[legacyTheme === 'light' ? 'light' : 'dark'];
 

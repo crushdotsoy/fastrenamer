@@ -20,16 +20,19 @@ export const en = {
   'source.mode.picked_files.detail': 'Pick individual files directly.',
   'source.mode.top_level_folders.label': 'Top-level folders',
   'source.mode.top_level_folders.picker': 'Add Folders',
-  'source.mode.top_level_folders.detail': 'Rename direct child folders inside each selected root folder.',
+  'source.mode.top_level_folders.detail':
+    'Rename direct child folders inside each selected root folder.',
   'source.mode.subfolders.label': 'Subfolders',
   'source.mode.subfolders.picker': 'Add Folders',
   'source.mode.subfolders.detail': 'Rename nested folders below the top level.',
   'source.mode.top_level_files.label': 'Top-level files',
   'source.mode.top_level_files.picker': 'Add Folders',
-  'source.mode.top_level_files.detail': 'Rename direct child files inside each selected root folder.',
+  'source.mode.top_level_files.detail':
+    'Rename direct child files inside each selected root folder.',
   'source.mode.files_recursive.label': 'Files recursively',
   'source.mode.files_recursive.picker': 'Add Folders',
-  'source.mode.files_recursive.detail': 'Rename files at any depth inside each selected root folder.',
+  'source.mode.files_recursive.detail':
+    'Rename files at any depth inside each selected root folder.',
 
   'rule.new_name': 'New Name',
   'rule.custom_rule': 'Custom Rule',
@@ -77,7 +80,8 @@ export const en = {
   'topbar.themes': 'Themes',
   'topbar.theme_custom': 'Custom',
   'topbar.theme_preset': 'Preset',
-  'topbar.choose_theme_aria': (vars?: Record<string, unknown>) => `Choose theme. Current theme: ${value(vars, 'themeName') ?? ''}`,
+  'topbar.choose_theme_aria': (vars?: Record<string, unknown>) =>
+    `Choose theme. Current theme: ${value(vars, 'themeName') ?? ''}`,
   'topbar.minimize': 'Minimize',
   'topbar.minimize_window': 'Minimize window',
   'topbar.restore_down': 'Restore down',
@@ -87,9 +91,11 @@ export const en = {
   'topbar.close': 'Close',
   'topbar.close_window': 'Close window',
   'topbar.status.ok': (vars?: Record<string, unknown>) => `${value(vars, 'count')} ok`,
-  'topbar.status.conflicts': (vars?: Record<string, unknown>) => `${value(vars, 'count')} conflicts`,
+  'topbar.status.conflicts': (vars?: Record<string, unknown>) =>
+    `${value(vars, 'count')} conflicts`,
   'topbar.status.invalid': (vars?: Record<string, unknown>) => `${value(vars, 'count')} invalid`,
-  'topbar.status.unchanged': (vars?: Record<string, unknown>) => `${value(vars, 'count')} unchanged`,
+  'topbar.status.unchanged': (vars?: Record<string, unknown>) =>
+    `${value(vars, 'count')} unchanged`,
   'topbar.busy.preview': 'Generating preview...',
   'topbar.busy.execute': 'Renaming...',
   'topbar.busy.undo': 'Undoing...',
@@ -118,13 +124,16 @@ export const en = {
   'rules.delete': 'Delete rule',
 
   'editor.new_name.placeholder': 'name_{seq_num:0001}',
-  'editor.new_name.help': 'Click a token to insert it where your cursor is. Extensions stay unchanged unless you add an Extension rule.',
+  'editor.new_name.help':
+    'Click a token to insert it where your cursor is. Extensions stay unchanged unless you add an Extension rule.',
   'editor.new_name.reverse_sequence': 'Reverse sequence',
   'editor.new_name.quick_insert': 'Quick Insert',
   'editor.new_name.starters': 'Starter Templates',
   'editor.custom.beta': 'Beta',
-  'editor.custom.help': 'Advanced expression rule. It runs safely in preview and must return the full next name.',
-  'editor.custom.return_label': 'Use values like currentName, originalStem, parent, index, and ext(extension) to build the final filename or folder name.',
+  'editor.custom.help':
+    'Advanced expression rule. It runs safely in preview and must return the full next name.',
+  'editor.custom.return_label':
+    'Use values like currentName, originalStem, parent, index, and ext(extension) to build the final filename or folder name.',
   'editor.custom.placeholder': 'snake(originalStem) + "_" + pad(index, 3) + ext(lower(extension))',
   'editor.custom.quick_insert': 'Quick Insert',
   'editor.custom.examples': 'Examples',
@@ -169,9 +178,11 @@ export const en = {
   'editor.extension.remove': 'Remove',
 
   'sources.add.title': 'Add Sources',
-  'sources.add.description': 'Choose what kind of items you want to rename before opening the file picker.',
+  'sources.add.description':
+    'Choose what kind of items you want to rename before opening the file picker.',
   'sources.add.dropped_title': 'Use Dropped Items',
-  'sources.add.dropped_description': 'Choose how Fast Renamer should interpret the dropped folders or files.',
+  'sources.add.dropped_description':
+    'Choose how Fast Renamer should interpret the dropped folders or files.',
   'sources.set': 'Source Set',
   'sources.filter': 'File Filter',
   'sources.filter.placeholder': '*.tif, *.tiff',
@@ -207,7 +218,8 @@ export const en = {
   'presets.load': 'Load',
   'presets.edit_name': 'Edit name',
   'common.delete': 'Delete',
-  'presets.rules_count': (vars?: Record<string, unknown>) => plural(Number(value(vars, 'count') ?? 0), 'rule', 'rules'),
+  'presets.rules_count': (vars?: Record<string, unknown>) =>
+    plural(Number(value(vars, 'count') ?? 0), 'rule', 'rules'),
 
   'history.title': 'Rename History',
   'history.description': 'Completed batches stored for auditability and one-click undo.',
@@ -243,26 +255,34 @@ export const en = {
   'updates.status.error': 'update error',
   'updates.summary.disabled': 'Install a packaged GitHub release to enable automatic updates.',
   'updates.summary.checking': 'Checking GitHub Releases for a newer version.',
-  'updates.summary.available_manual': (vars?: Record<string, unknown>) => `Version ${value(vars, 'version') ?? 'unknown'} is available to download from GitHub Releases.`,
-  'updates.summary.available_auto': (vars?: Record<string, unknown>) => `Version ${value(vars, 'version') ?? 'unknown'} is available and downloading in the background.`,
-  'updates.summary.downloading_with_progress': (vars?: Record<string, unknown>) => `${value(vars, 'percent')}% downloaded (${value(vars, 'transferred')} of ${value(vars, 'total')}).`,
+  'updates.summary.available_manual': (vars?: Record<string, unknown>) =>
+    `Version ${value(vars, 'version') ?? 'unknown'} is available to download from GitHub Releases.`,
+  'updates.summary.available_auto': (vars?: Record<string, unknown>) =>
+    `Version ${value(vars, 'version') ?? 'unknown'} is available and downloading in the background.`,
+  'updates.summary.downloading_with_progress': (vars?: Record<string, unknown>) =>
+    `${value(vars, 'percent')}% downloaded (${value(vars, 'transferred')} of ${value(vars, 'total')}).`,
   'updates.summary.downloading': 'Downloading the latest release in the background.',
-  'updates.summary.downloaded': (vars?: Record<string, unknown>) => `Version ${value(vars, 'version') ?? 'unknown'} is ready. Restart the app to install it.`,
-  'updates.summary.up_to_date_manual': 'This installation matches the latest published release. Future updates will open GitHub for a manual download.',
+  'updates.summary.downloaded': (vars?: Record<string, unknown>) =>
+    `Version ${value(vars, 'version') ?? 'unknown'} is ready. Restart the app to install it.`,
+  'updates.summary.up_to_date_manual':
+    'This installation matches the latest published release. Future updates will open GitHub for a manual download.',
   'updates.summary.up_to_date': 'This installation already matches the latest published release.',
   'updates.summary.installing': 'Closing the app to install the downloaded update.',
   'updates.summary.error': 'The app could not complete the update check.',
-  'updates.summary.idle_manual': 'This build checks for updates, but installs must be downloaded manually from GitHub Releases.',
+  'updates.summary.idle_manual':
+    'This build checks for updates, but installs must be downloaded manually from GitHub Releases.',
   'updates.summary.idle': 'Automatic updates are enabled for packaged releases.',
   'updates.current': (vars?: Record<string, unknown>) => `current ${value(vars, 'version')}`,
   'updates.latest': (vars?: Record<string, unknown>) => `latest ${value(vars, 'version')}`,
   'updates.checked': (vars?: Record<string, unknown>) => `checked ${value(vars, 'date')}`,
-  'updates.speed': (vars?: Record<string, unknown>) => `${value(vars, 'percent')}% at ${value(vars, 'speed')}/s`,
+  'updates.speed': (vars?: Record<string, unknown>) =>
+    `${value(vars, 'percent')}% at ${value(vars, 'speed')}/s`,
   'updates.check_now': 'Check now',
   'updates.download': 'Download update',
   'updates.restart_install': 'Restart to install',
   'updates.theme_library': 'Theme library',
-  'updates.theme_library_help': 'Pick any preset, then clone it when you want to make your own palette.',
+  'updates.theme_library_help':
+    'Pick any preset, then clone it when you want to make your own palette.',
   'appearance.cycle': 'Cycle',
   'appearance.new_custom': 'New Custom from Current',
   'appearance.active': 'Active',
@@ -275,24 +295,31 @@ export const en = {
   'appearance.theme_name': 'Theme name',
   'appearance.theme_name_placeholder': 'Custom Theme',
   'appearance.editor_title': 'Custom theme editor',
-  'appearance.editor_help': 'Presets are read-only. Create a custom theme from the current selection to edit every token.',
+  'appearance.editor_help':
+    'Presets are read-only. Create a custom theme from the current selection to edit every token.',
   'appearance.base.dark': 'dark',
   'appearance.base.light': 'light',
 
-  'platform_rules.description': (vars?: Record<string, unknown>) => `Preview validation uses ${value(vars, 'platform')} filename rules so conflicts and invalid names reflect the current machine.`,
-  'execution_profile.description': 'Renderer runs sandboxed with a preload bridge. Filesystem writes only happen through validated batch execution and undo in the Electron main process.',
+  'platform_rules.description': (vars?: Record<string, unknown>) =>
+    `Preview validation uses ${value(vars, 'platform')} filename rules so conflicts and invalid names reflect the current machine.`,
+  'execution_profile.description':
+    'Renderer runs sandboxed with a preload bridge. Filesystem writes only happen through validated batch execution and undo in the Electron main process.',
 
   'toast.update_found.title': 'Update found',
-  'toast.update_found.description_manual': (vars?: Record<string, unknown>) => `Version ${value(vars, 'version') ?? 'unknown'} is available on GitHub Releases for manual download.`,
-  'toast.update_found.description_auto': (vars?: Record<string, unknown>) => `Version ${value(vars, 'version') ?? 'unknown'} is downloading in the background.`,
+  'toast.update_found.description_manual': (vars?: Record<string, unknown>) =>
+    `Version ${value(vars, 'version') ?? 'unknown'} is available on GitHub Releases for manual download.`,
+  'toast.update_found.description_auto': (vars?: Record<string, unknown>) =>
+    `Version ${value(vars, 'version') ?? 'unknown'} is downloading in the background.`,
   'toast.open_settings': 'Open settings',
   'toast.update_ready.title': 'Update ready',
-  'toast.update_ready.description': (vars?: Record<string, unknown>) => `Version ${value(vars, 'version') ?? 'unknown'} is ready to install.`,
+  'toast.update_ready.description': (vars?: Record<string, unknown>) =>
+    `Version ${value(vars, 'version') ?? 'unknown'} is ready to install.`,
   'toast.restart_now': 'Restart now',
   'toast.update_failed.title': 'Update failed',
 
   'theme.preset.dark.description': 'The original deep-space default.',
-  'theme.preset.charmbracelet.description': 'Based on the current charm.land cream, violet, and neon palette.',
+  'theme.preset.charmbracelet.description':
+    'Based on the current charm.land cream, violet, and neon palette.',
   'theme.preset.soycrush.description': 'Based on the current crush.soy lavender and pink palette.',
   'theme.preset.light.description': 'The original bright workspace.',
   'theme.token.background.label': 'Background',
@@ -337,7 +364,10 @@ export const en = {
   'error.generate_preview': 'Failed to generate preview.',
   'error.preset_name_required': 'Preset name is required.',
   'selected.none': '0 selected',
-  'selected.folders': (vars?: Record<string, unknown>) => `${plural(Number(value(vars, 'count') ?? 0), 'folder', 'folders')} selected`,
-  'selected.files': (vars?: Record<string, unknown>) => `${plural(Number(value(vars, 'count') ?? 0), 'file', 'files')} selected`,
-  'selected.items': (vars?: Record<string, unknown>) => `${plural(Number(value(vars, 'count') ?? 0), 'item', 'items')} selected`,
+  'selected.folders': (vars?: Record<string, unknown>) =>
+    `${plural(Number(value(vars, 'count') ?? 0), 'folder', 'folders')} selected`,
+  'selected.files': (vars?: Record<string, unknown>) =>
+    `${plural(Number(value(vars, 'count') ?? 0), 'file', 'files')} selected`,
+  'selected.items': (vars?: Record<string, unknown>) =>
+    `${plural(Number(value(vars, 'count') ?? 0), 'item', 'items')} selected`,
 } as const;

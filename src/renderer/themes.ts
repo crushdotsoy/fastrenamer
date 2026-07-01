@@ -179,7 +179,9 @@ export function getAllThemes(customThemes: AppTheme[]) {
 
 export function resolveTheme(themeId: string | null, customThemes: AppTheme[]) {
   const requestedThemeId = migrateLegacyThemeId(themeId);
-  return getAllThemes(customThemes).find((theme) => theme.id === requestedThemeId) ?? THEME_PRESETS[0];
+  return (
+    getAllThemes(customThemes).find((theme) => theme.id === requestedThemeId) ?? THEME_PRESETS[0]
+  );
 }
 
 export function migrateLegacyThemeId(themeId: string | null) {

@@ -1,14 +1,28 @@
-import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
+import type {
+  HistoryEntry,
+  PlatformTarget,
+  Preset,
+  PreviewResult,
+  RenameRule,
+  SortMode,
+  SourceMode,
+  SourceSelection,
+} from '@fast-renamer/rename-engine';
+import { sortItemsByMode } from '@fast-renamer/rename-engine';
+import type { UpdateState, WindowState } from '@shared/contracts';
 import {
-  CheckCircle2,
+  AlertTriangle,
   Braces,
   Calendar,
   CaseSensitive,
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
   Clock3,
   Copy,
+  Download,
   Eraser,
+  ExternalLink,
   FileCode,
   FileInput,
   GripVertical,
@@ -26,28 +40,15 @@ import {
   Trash2,
   Type,
   Undo2,
-  Download,
-  ExternalLink,
-  AlertTriangle,
   X,
 } from 'lucide-react';
 import type { DragEvent, ReactNode } from 'react';
-import type {
-  HistoryEntry,
-  PlatformTarget,
-  Preset,
-  PreviewResult,
-  SourceMode,
-  RenameRule,
-  SortMode,
-  SourceSelection,
-} from '@fast-renamer/rename-engine';
-import { sortItemsByMode } from '@fast-renamer/rename-engine';
-import type { UpdateState, WindowState } from '@shared/contracts';
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Badge,
   Button,
   Checkbox,
+  cn,
   Drawer,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -75,11 +76,13 @@ import {
   ToastTitle,
   ToastViewport,
   Tooltip,
-  cn,
 } from './components/ui';
+import { type AppLocale, AVAILABLE_LOCALES, useI18n } from './i18n';
 import {
   ACTIVE_THEME_STORAGE_KEY,
+  type AppTheme,
   CUSTOM_THEMES_STORAGE_KEY,
+  createCustomTheme,
   DEFAULT_THEME_ID,
   getAllThemes,
   getThemeSnapshot,
@@ -88,12 +91,9 @@ import {
   resolveTheme,
   THEME_SNAPSHOT_STORAGE_KEY,
   THEME_TOKEN_FIELDS,
-  type AppTheme,
   type ThemeTokenKey,
   type ThemeTokens,
-  createCustomTheme,
 } from './themes';
-import { AVAILABLE_LOCALES, useI18n, type AppLocale } from './i18n';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -135,7 +135,9 @@ const RULE_TYPE_ORDER: RenameRule['type'][] = [
   'extension_handling',
 ];
 
-function getSourceModeMeta(t: ReturnType<typeof useI18n>['t']): Record<
+function getSourceModeMeta(
+  t: ReturnType<typeof useI18n>['t'],
+): Record<
   SourceMode,
   { label: string; pickerLabel: string; detail: string; supportsFilter: boolean }
 > {
@@ -188,7 +190,9 @@ function getSortModeMeta(t: ReturnType<typeof useI18n>['t']): Record<SortMode, {
   };
 }
 
-function getRuleMeta(t: ReturnType<typeof useI18n>['t']): Record<
+function getRuleMeta(
+  t: ReturnType<typeof useI18n>['t'],
+): Record<
   RenameRule['type'],
   { label: string; color: string; icon: React.ComponentType<{ className?: string }> }
 > {
@@ -201,7 +205,11 @@ function getRuleMeta(t: ReturnType<typeof useI18n>['t']): Record<
     trim_text: { label: t('rule.trim_text'), color: '#2dd4bf', icon: Scissors },
     remove_text: { label: t('rule.remove_text'), color: '#f87171', icon: Eraser },
     sequence_insert: { label: t('rule.sequence_insert'), color: '#fb923c', icon: Hash },
-    letter_sequence_insert: { label: t('rule.letter_sequence_insert'), color: '#f59e0b', icon: Type },
+    letter_sequence_insert: {
+      label: t('rule.letter_sequence_insert'),
+      color: '#f59e0b',
+      icon: Type,
+    },
     date_time: { label: t('rule.date_time'), color: '#fbbf24', icon: Calendar },
     extension_handling: { label: t('rule.extension_handling'), color: '#e879f9', icon: FileCode },
   };
@@ -209,14 +217,46 @@ function getRuleMeta(t: ReturnType<typeof useI18n>['t']): Record<
 
 function getNewNameTokens(t: ReturnType<typeof useI18n>['t']) {
   return [
-    { label: t('new_name.token.sequence.label'), detail: t('new_name.token.sequence.detail'), value: '{seq_num:0001}' },
-    { label: t('new_name.token.letter_sequence.label'), detail: t('new_name.token.letter_sequence.detail'), value: '{seq_letter}' },
-    { label: t('new_name.token.reverse_letter_sequence.label'), detail: t('new_name.token.reverse_letter_sequence.detail'), value: '{seq_letter_rev}' },
-    { label: t('new_name.token.original.label'), detail: t('new_name.token.original.detail'), value: '{original_stem}' },
-    { label: t('new_name.token.current.label'), detail: t('new_name.token.current.detail'), value: '{current_stem}' },
-    { label: t('new_name.token.parent.label'), detail: t('new_name.token.parent.detail'), value: '{parent}' },
-    { label: t('new_name.token.date.label'), detail: t('new_name.token.date.detail'), value: '{date}' },
-    { label: t('new_name.token.time.label'), detail: t('new_name.token.time.detail'), value: '{time}' },
+    {
+      label: t('new_name.token.sequence.label'),
+      detail: t('new_name.token.sequence.detail'),
+      value: '{seq_num:0001}',
+    },
+    {
+      label: t('new_name.token.letter_sequence.label'),
+      detail: t('new_name.token.letter_sequence.detail'),
+      value: '{seq_letter}',
+    },
+    {
+      label: t('new_name.token.reverse_letter_sequence.label'),
+      detail: t('new_name.token.reverse_letter_sequence.detail'),
+      value: '{seq_letter_rev}',
+    },
+    {
+      label: t('new_name.token.original.label'),
+      detail: t('new_name.token.original.detail'),
+      value: '{original_stem}',
+    },
+    {
+      label: t('new_name.token.current.label'),
+      detail: t('new_name.token.current.detail'),
+      value: '{current_stem}',
+    },
+    {
+      label: t('new_name.token.parent.label'),
+      detail: t('new_name.token.parent.detail'),
+      value: '{parent}',
+    },
+    {
+      label: t('new_name.token.date.label'),
+      detail: t('new_name.token.date.detail'),
+      value: '{date}',
+    },
+    {
+      label: t('new_name.token.time.label'),
+      detail: t('new_name.token.time.detail'),
+      value: '{time}',
+    },
   ] as const;
 }
 
@@ -323,7 +363,16 @@ function createRule(type: RenameRule['type']): RenameRule {
     case 'custom_rule':
       return { id, type, enabled: true, expression: 'currentName' };
     case 'find_replace':
-      return { id, type, enabled: true, find: '', replace: '', matchCase: false, useRegex: false, replaceAll: true };
+      return {
+        id,
+        type,
+        enabled: true,
+        find: '',
+        replace: '',
+        matchCase: false,
+        useRegex: false,
+        replaceAll: true,
+      };
     case 'prefix_suffix':
       return { id, type, enabled: true, prefix: '', suffix: '' };
     case 'case_transform':
@@ -333,9 +382,27 @@ function createRule(type: RenameRule['type']): RenameRule {
     case 'remove_text':
       return { id, type, enabled: true, text: '', matchCase: false };
     case 'sequence_insert':
-      return { id, type, enabled: true, position: 'prefix', start: 1, step: 1, padWidth: 3, separator: '_' };
+      return {
+        id,
+        type,
+        enabled: true,
+        position: 'prefix',
+        start: 1,
+        step: 1,
+        padWidth: 3,
+        separator: '_',
+      };
     case 'letter_sequence_insert':
-      return { id, type, enabled: true, position: 'prefix', start: 1, step: 1, casing: 'upper', separator: '_' };
+      return {
+        id,
+        type,
+        enabled: true,
+        position: 'prefix',
+        start: 1,
+        step: 1,
+        casing: 'upper',
+        separator: '_',
+      };
     case 'date_time':
       return { id, type, enabled: true, position: 'suffix', format: 'YYYY-MM-DD', separator: '_' };
     case 'extension_handling':
@@ -429,27 +496,31 @@ function parseStoredCustomThemes() {
         return [];
       }
 
-      const baseThemeId = theme.baseThemeId === 'light' || theme.baseThemeId === 'dark'
-        ? theme.baseThemeId
-        : theme.colorScheme === 'light' || theme.colorScheme === 'dark'
-          ? theme.colorScheme
-        : null;
+      const baseThemeId =
+        theme.baseThemeId === 'light' || theme.baseThemeId === 'dark'
+          ? theme.baseThemeId
+          : theme.colorScheme === 'light' || theme.colorScheme === 'dark'
+            ? theme.colorScheme
+            : null;
       const tokens = parseStoredThemeTokens(theme.tokens);
 
       if (!baseThemeId || !tokens) {
         return [];
       }
 
-      return [{
-        id: typeof theme.id === 'string' && theme.id ? theme.id : `custom-${crypto.randomUUID()}`,
-        name: typeof theme.name === 'string' && theme.name.trim() ? theme.name : 'Custom Theme',
-        description: typeof theme.description === 'string' && theme.description.trim()
-          ? theme.description
-          : 'User-created theme.',
-        baseThemeId,
-        tokens,
-        kind: 'custom',
-      }];
+      return [
+        {
+          id: typeof theme.id === 'string' && theme.id ? theme.id : `custom-${crypto.randomUUID()}`,
+          name: typeof theme.name === 'string' && theme.name.trim() ? theme.name : 'Custom Theme',
+          description:
+            typeof theme.description === 'string' && theme.description.trim()
+              ? theme.description
+              : 'User-created theme.',
+          baseThemeId,
+          tokens,
+          kind: 'custom',
+        },
+      ];
     });
   } catch {
     return [];
@@ -479,7 +550,10 @@ function useThemeManager() {
   });
 
   const themes = useMemo(() => getAllThemes(customThemes), [customThemes]);
-  const theme = useMemo(() => resolveTheme(activeThemeId, customThemes), [activeThemeId, customThemes]);
+  const theme = useMemo(
+    () => resolveTheme(activeThemeId, customThemes),
+    [activeThemeId, customThemes],
+  );
 
   useEffect(() => {
     if (!themes.some((candidate) => candidate.id === activeThemeId)) {
@@ -526,7 +600,11 @@ function useThemeManager() {
       setCustomThemes((current) =>
         current.map((candidate) =>
           candidate.id === themeId
-            ? { ...candidate, name, description: `Custom theme based on ${name || 'your palette'}.` }
+            ? {
+                ...candidate,
+                name,
+                description: `Custom theme based on ${name || 'your palette'}.`,
+              }
             : candidate,
         ),
       );
@@ -629,7 +707,8 @@ function getUpdateSummary(state: UpdateState, t: ReturnType<typeof useI18n>['t']
       return t('updates.summary.checking');
     case 'available':
       return state.manualDownloadOnly
-        ? state.message ?? t('updates.summary.available_manual', { version: state.availableVersion ?? 'unknown' })
+        ? (state.message ??
+            t('updates.summary.available_manual', { version: state.availableVersion ?? 'unknown' }))
         : t('updates.summary.available_auto', { version: state.availableVersion ?? 'unknown' });
     case 'downloading':
       return state.progress
@@ -651,7 +730,7 @@ function getUpdateSummary(state: UpdateState, t: ReturnType<typeof useI18n>['t']
       return state.message ?? t('updates.summary.error');
     default:
       return state.manualDownloadOnly
-        ? state.message ?? t('updates.summary.idle_manual')
+        ? (state.message ?? t('updates.summary.idle_manual'))
         : t('updates.summary.idle');
   }
 }
@@ -672,7 +751,12 @@ function getThemeKindLabel(theme: AppTheme, active: boolean, t: ReturnType<typeo
   return theme.kind === 'custom' ? t('appearance.custom') : t('appearance.preset');
 }
 
-type SettingsSectionId = 'updates' | 'executionProfile' | 'platformRules' | 'appearance' | 'language';
+type SettingsSectionId =
+  | 'updates'
+  | 'executionProfile'
+  | 'platformRules'
+  | 'appearance'
+  | 'language';
 
 function SettingsSection({
   title,
@@ -760,11 +844,7 @@ function ThemeOptionCard({
         active ? 'border-accent bg-accent/8' : 'border-border bg-card',
       )}
     >
-      <button
-        type="button"
-        onClick={onSelect}
-        className="w-full text-left"
-      >
+      <button type="button" onClick={onSelect} className="w-full text-left">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -816,12 +896,13 @@ function ThemeTokenEditor({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const { t } = useI18n();
   return (
     <label className="rounded-xl border border-border bg-card p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">{label}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground">
+            {label}
+          </p>
           <p className="mt-1 text-[11px] text-muted-foreground">{description}</p>
         </div>
         <code className="rounded-md bg-surface px-2 py-1 text-[11px] text-muted-foreground">
@@ -836,7 +917,10 @@ function ThemeTokenEditor({
           onChange={(event) => onChange(event.target.value)}
           className="h-10 w-12 cursor-pointer rounded-md border border-border bg-transparent p-1"
         />
-        <div className="h-10 flex-1 rounded-lg border border-border" style={{ backgroundColor: value }} />
+        <div
+          className="h-10 flex-1 rounded-lg border border-border"
+          style={{ backgroundColor: value }}
+        />
       </div>
     </label>
   );
@@ -896,7 +980,9 @@ export function App() {
     fileNamePattern: string;
     sortMode: SortMode;
   } | null>(null);
-  const [pendingDroppedSources, setPendingDroppedSources] = useState<SourceSelection[] | null>(null);
+  const [pendingDroppedSources, setPendingDroppedSources] = useState<SourceSelection[] | null>(
+    null,
+  );
   const [dragActive, setDragActive] = useState(false);
   const [windowState, setWindowState] = useState<WindowState>(DEFAULT_WINDOW_STATE);
   const [updateState, setUpdateState] = useState<UpdateState>(DEFAULT_UPDATE_STATE);
@@ -934,13 +1020,20 @@ export function App() {
     [draftSortMode, pendingDroppedSources, sources],
   );
 
-  useEffect(() => { void reloadMetadata(); }, []);
+  useEffect(() => {
+    void reloadMetadata();
+  }, [reloadMetadata]);
 
   useEffect(() => {
-    if (sources.length === 0) { setPreview(DEFAULT_PREVIEW); return; }
-    const t = window.setTimeout(() => { void refreshPreview(); }, 180);
+    if (sources.length === 0) {
+      setPreview(DEFAULT_PREVIEW);
+      return;
+    }
+    const t = window.setTimeout(() => {
+      void refreshPreview();
+    }, 180);
     return () => window.clearTimeout(t);
-  }, [previewRequest, sources.length]);
+  }, [sources.length, refreshPreview]);
 
   useEffect(() => {
     if (addSourcesOpen || !pendingSourcePick) {
@@ -974,11 +1067,16 @@ export function App() {
       const containerWidth = resizeContainerWidth.current;
       if (containerWidth <= 0) return;
       const deltaRatio = (e.clientX - resizeStartX.current) / containerWidth;
-      setLeftWidthRatio(clampLeftWidthRatio(resizeStartWidthRatio.current + deltaRatio, containerWidth));
+      setLeftWidthRatio(
+        clampLeftWidthRatio(resizeStartWidthRatio.current + deltaRatio, containerWidth),
+      );
     }
-    function onMouseUp() { isResizing.current = false; }
+    function onMouseUp() {
+      isResizing.current = false;
+    }
     function onWindowResize() {
-      const containerWidth = desktopLayoutRef.current?.getBoundingClientRect().width ?? window.innerWidth;
+      const containerWidth =
+        desktopLayoutRef.current?.getBoundingClientRect().width ?? window.innerWidth;
       setLeftWidthRatio((current) => clampLeftWidthRatio(current, containerWidth));
     }
 
@@ -1047,8 +1145,12 @@ export function App() {
           tone: 'accent',
           title: t('toast.update_found.title'),
           description: state.manualDownloadOnly
-            ? t('toast.update_found.description_manual', { version: state.availableVersion ?? 'unknown' })
-            : t('toast.update_found.description_auto', { version: state.availableVersion ?? 'unknown' }),
+            ? t('toast.update_found.description_manual', {
+                version: state.availableVersion ?? 'unknown',
+              })
+            : t('toast.update_found.description_auto', {
+                version: state.availableVersion ?? 'unknown',
+              }),
           actionLabel: state.manualDownloadOnly ? t('updates.download') : t('toast.open_settings'),
           actionKind: state.manualDownloadOnly ? 'download-update' : 'open-settings',
         });
@@ -1058,7 +1160,9 @@ export function App() {
         showUpdateToast({
           tone: 'ok',
           title: t('toast.update_ready.title'),
-          description: t('toast.update_ready.description', { version: state.availableVersion ?? 'unknown' }),
+          description: t('toast.update_ready.description', {
+            version: state.availableVersion ?? 'unknown',
+          }),
           actionLabel: t('toast.restart_now'),
           actionKind: 'install-update',
         });
@@ -1099,7 +1203,7 @@ export function App() {
       mounted = false;
       unsubscribe();
     };
-  }, [t]);
+  }, [t, showUpdateToast]);
 
   async function reloadMetadata() {
     const [presetList, historyList] = await Promise.all([
@@ -1250,7 +1354,12 @@ export function App() {
       return;
     }
 
-    setSources((current) => sortSourceSelections(current.filter((source) => source.path !== sourcePath), sortMode));
+    setSources((current) =>
+      sortSourceSelections(
+        current.filter((source) => source.path !== sourcePath),
+        sortMode,
+      ),
+    );
   }
 
   async function handleDrop(event: DragEvent<HTMLDivElement>) {
@@ -1287,9 +1396,9 @@ export function App() {
         ? sourceMode
         : availableModes.includes('picked_folders')
           ? 'picked_folders'
-        : availableModes.includes('files_recursive')
-          ? 'files_recursive'
-          : availableModes[0];
+          : availableModes.includes('files_recursive')
+            ? 'files_recursive'
+            : availableModes[0];
 
       setPendingDroppedSources(sortSourceSelections(resolved, sortMode));
       setDraftSourceMode(nextDefaultMode);
@@ -1346,8 +1455,15 @@ export function App() {
   }
 
   async function savePreset() {
-    if (!presetName.trim()) { setError(t('error.preset_name_required')); return; }
-    await window.advancedRenamer.savePreset({ id: selectedPresetId ?? undefined, name: presetName.trim(), rules });
+    if (!presetName.trim()) {
+      setError(t('error.preset_name_required'));
+      return;
+    }
+    await window.advancedRenamer.savePreset({
+      id: selectedPresetId ?? undefined,
+      name: presetName.trim(),
+      rules,
+    });
     setPresetName('');
     setSelectedPresetId(null);
     await reloadMetadata();
@@ -1366,7 +1482,9 @@ export function App() {
   const availableDraftModes = pendingDroppedSources
     ? getAvailableSourceModes(pendingDroppedSources)
     : SOURCE_MODE_OPTIONS;
-  const sourceDialogTitle = pendingDroppedSources ? t('sources.add.dropped_title') : t('sources.add.title');
+  const sourceDialogTitle = pendingDroppedSources
+    ? t('sources.add.dropped_title')
+    : t('sources.add.title');
   const sourceDialogDescription = pendingDroppedSources
     ? t('sources.add.dropped_description')
     : t('sources.add.description');
@@ -1378,10 +1496,7 @@ export function App() {
 
   return (
     <div
-      className={cn(
-        'h-screen overflow-hidden text-foreground',
-        !windowState.isMaximized && 'p-2',
-      )}
+      className={cn('h-screen overflow-hidden text-foreground', !windowState.isMaximized && 'p-2')}
       onDragOver={(event) => {
         if (!isFileDropEvent(event)) {
           return;
@@ -1403,12 +1518,8 @@ export function App() {
       onDrop={(event) => void handleDrop(event)}
     >
       <div
-        className={cn(
-          'flex h-full flex-col',
-          !windowState.isMaximized && 'mx-auto max-w-[1800px]',
-        )}
+        className={cn('flex h-full flex-col', !windowState.isMaximized && 'mx-auto max-w-[1800px]')}
       >
-
         {/* Top bar */}
         <div className="shrink-0 pb-2">
           <TopBar
@@ -1447,7 +1558,10 @@ export function App() {
         <div className="shrink-0 border-t border-border mb-2" />
 
         {/* Main panels */}
-        <div ref={desktopLayoutRef} className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4 lg:flex-row lg:gap-0">
+        <div
+          ref={desktopLayoutRef}
+          className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4 lg:flex-row lg:gap-0"
+        >
           <div
             className="h-full lg:shrink-0"
             style={isDesktop ? { width: `${leftWidthRatio * 100}%` } : undefined}
@@ -1533,26 +1647,38 @@ export function App() {
                 </SelectTrigger>
                 <SelectContent>
                   {availableDraftModes.includes('picked_folders') && (
-                    <SelectItem value="picked_folders">{sourceModeMeta.picked_folders.label}</SelectItem>
+                    <SelectItem value="picked_folders">
+                      {sourceModeMeta.picked_folders.label}
+                    </SelectItem>
                   )}
                   {availableDraftModes.includes('picked_files') && (
-                    <SelectItem value="picked_files">{sourceModeMeta.picked_files.label}</SelectItem>
+                    <SelectItem value="picked_files">
+                      {sourceModeMeta.picked_files.label}
+                    </SelectItem>
                   )}
                   {availableDraftModes.includes('top_level_folders') && (
-                    <SelectItem value="top_level_folders">{sourceModeMeta.top_level_folders.label}</SelectItem>
+                    <SelectItem value="top_level_folders">
+                      {sourceModeMeta.top_level_folders.label}
+                    </SelectItem>
                   )}
                   {availableDraftModes.includes('subfolders') && (
                     <SelectItem value="subfolders">{sourceModeMeta.subfolders.label}</SelectItem>
                   )}
                   {availableDraftModes.includes('top_level_files') && (
-                    <SelectItem value="top_level_files">{sourceModeMeta.top_level_files.label}</SelectItem>
+                    <SelectItem value="top_level_files">
+                      {sourceModeMeta.top_level_files.label}
+                    </SelectItem>
                   )}
                   {availableDraftModes.includes('files_recursive') && (
-                    <SelectItem value="files_recursive">{sourceModeMeta.files_recursive.label}</SelectItem>
+                    <SelectItem value="files_recursive">
+                      {sourceModeMeta.files_recursive.label}
+                    </SelectItem>
                   )}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">{sourceModeMeta[draftSourceMode].detail}</p>
+              <p className="text-xs text-muted-foreground">
+                {sourceModeMeta[draftSourceMode].detail}
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -1600,8 +1726,12 @@ export function App() {
               {pendingDroppedSources ? t('sources.dropped') : t('sources.current')}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Badge dot tone="accent">{sourceModeMeta[draftSourceMode].label}</Badge>
-              <Badge dot>{t('sources.sort.badge', { mode: sortModeMeta[draftSortMode].label })}</Badge>
+              <Badge dot tone="accent">
+                {sourceModeMeta[draftSourceMode].label}
+              </Badge>
+              <Badge dot>
+                {t('sources.sort.badge', { mode: sortModeMeta[draftSortMode].label })}
+              </Badge>
               {draftFileNamePattern ? <Badge dot>{draftFileNamePattern}</Badge> : null}
               <Badge dot>{t('sources.roots', { count: sourceDialogRootCount })}</Badge>
             </div>
@@ -1613,8 +1743,12 @@ export function App() {
                     className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-card/70 px-3 py-2"
                   >
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-foreground">{source.name}</div>
-                      <div className="truncate text-[11px] text-muted-foreground">{source.path}</div>
+                      <div className="truncate text-sm font-medium text-foreground">
+                        {source.name}
+                      </div>
+                      <div className="truncate text-[11px] text-muted-foreground">
+                        {source.path}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge tone={source.isDirectory ? 'accent' : 'default'}>
@@ -1717,7 +1851,9 @@ export function App() {
             <div key={entry.id} className="rounded-xl border border-border bg-surface p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{t('history.batch', { id: entry.id })}</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {t('history.batch', { id: entry.id })}
+                  </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {new Date(entry.createdAt).toLocaleString(locale)}
                   </p>
@@ -1737,11 +1873,17 @@ export function App() {
               </div>
               <div className="mt-3 flex gap-4 text-xs text-muted-foreground">
                 <span>{t('history.renamed', { count: entry.renamedCount })}</span>
-                <span>{t('history.blocked', { count: entry.previewSummary.conflict + entry.previewSummary.invalid })}</span>
+                <span>
+                  {t('history.blocked', {
+                    count: entry.previewSummary.conflict + entry.previewSummary.invalid,
+                  })}
+                </span>
               </div>
-              {entry.undoReason && entry.undoState !== 'ready' && entry.undoState !== 'archived' && (
-                <p className="mt-3 text-xs text-conflict">{entry.undoReason}</p>
-              )}
+              {entry.undoReason &&
+                entry.undoState !== 'ready' &&
+                entry.undoState !== 'archived' && (
+                  <p className="mt-3 text-xs text-conflict">{entry.undoReason}</p>
+                )}
               {entry.rules.length === 0 && (
                 <p className="mt-3 text-xs text-muted-foreground">{t('history.no_template')}</p>
               )}
@@ -1778,11 +1920,11 @@ export function App() {
         <div className="space-y-3 p-5">
           <SettingsSection
             title={t('settings.updates')}
-            badge={(
+            badge={
               <Badge tone={getUpdateTone(updateState.status)} dot>
                 {getUpdateStatusLabel(updateState.status, t)}
               </Badge>
-            )}
+            }
             open={openSettingsSection === 'updates'}
             onToggle={() => toggleSettingsSection('updates')}
           >
@@ -1790,12 +1932,17 @@ export function App() {
 
             <div className="mt-3 flex flex-wrap gap-2">
               <Badge>{t('updates.current', { version: updateState.currentVersion })}</Badge>
-              {updateState.availableVersion && updateState.availableVersion !== updateState.currentVersion && (
-                <Badge tone="accent">{t('updates.latest', { version: updateState.availableVersion })}</Badge>
-              )}
+              {updateState.availableVersion &&
+                updateState.availableVersion !== updateState.currentVersion && (
+                  <Badge tone="accent">
+                    {t('updates.latest', { version: updateState.availableVersion })}
+                  </Badge>
+                )}
               {updateState.checkedAt && (
                 <Badge tone="unchanged">
-                  {t('updates.checked', { date: new Date(updateState.checkedAt).toLocaleString(locale) })}
+                  {t('updates.checked', {
+                    date: new Date(updateState.checkedAt).toLocaleString(locale),
+                  })}
                 </Badge>
               )}
             </div>
@@ -1805,7 +1952,9 @@ export function App() {
                 <div className="h-2 overflow-hidden rounded-full bg-border">
                   <div
                     className="h-full rounded-full bg-accent transition-[width] duration-300"
-                    style={{ width: `${Math.max(4, Math.min(100, updateState.progress.percent))}%` }}
+                    style={{
+                      width: `${Math.max(4, Math.min(100, updateState.progress.percent))}%`,
+                    }}
                   />
                 </div>
                 <p className="mt-2 text-[11px] text-muted-foreground">
@@ -1824,7 +1973,9 @@ export function App() {
                 disabled={updateAction !== 'idle' || updateState.status === 'disabled'}
                 onClick={() => void checkForUpdates()}
               >
-                <RefreshCcw className={cn('h-3.5 w-3.5', updateAction === 'checking' && 'animate-spin')} />
+                <RefreshCcw
+                  className={cn('h-3.5 w-3.5', updateAction === 'checking' && 'animate-spin')}
+                />
                 {t('updates.check_now')}
               </Button>
               <Button
@@ -1834,20 +1985,28 @@ export function App() {
                     ? updateState.status !== 'available' || updateAction === 'installing'
                     : updateState.status !== 'downloaded' || updateAction === 'installing'
                 }
-                onClick={() => void (updateState.manualDownloadOnly ? openUpdateDownload() : installUpdate())}
+                onClick={() =>
+                  void (updateState.manualDownloadOnly ? openUpdateDownload() : installUpdate())
+                }
               >
                 {updateState.manualDownloadOnly ? (
                   <ExternalLink className="h-3.5 w-3.5" />
                 ) : (
                   <Download className="h-3.5 w-3.5" />
                 )}
-                {updateState.manualDownloadOnly ? t('updates.download') : t('updates.restart_install')}
+                {updateState.manualDownloadOnly
+                  ? t('updates.download')
+                  : t('updates.restart_install')}
               </Button>
             </div>
           </SettingsSection>
           <SettingsSection
             title={t('settings.language')}
-            badge={<Badge tone="accent">{AVAILABLE_LOCALES.find((option) => option.code === locale)?.nativeLabel ?? locale}</Badge>}
+            badge={
+              <Badge tone="accent">
+                {AVAILABLE_LOCALES.find((option) => option.code === locale)?.nativeLabel ?? locale}
+              </Badge>
+            }
             open={openSettingsSection === 'language'}
             onToggle={() => toggleSettingsSection('language')}
           >
@@ -1879,7 +2038,9 @@ export function App() {
             <div className="space-y-4">
               <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-border bg-card p-3">
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{t('updates.theme_library')}</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {t('updates.theme_library')}
+                  </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {t('updates.theme_library_help')}
                   </p>
@@ -1912,8 +2073,12 @@ export function App() {
                 <div className="space-y-4 rounded-xl border border-border bg-surface/60 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-foreground">{t('appearance.edit_custom')}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">{t('appearance.edit_help')}</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {t('appearance.edit_custom')}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t('appearance.edit_help')}
+                      </p>
                     </div>
                     <Button
                       size="sm"
@@ -1926,12 +2091,17 @@ export function App() {
                   </div>
 
                   <label className="space-y-2">
-                    <span className="text-xs text-muted-foreground">{t('appearance.theme_name')}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {t('appearance.theme_name')}
+                    </span>
                     <Input
                       value={activeCustomTheme.name}
-                      onChange={(event) => renameCustomTheme(activeCustomTheme.id, event.target.value)}
+                      onChange={(event) =>
+                        renameCustomTheme(activeCustomTheme.id, event.target.value)
+                      }
                       onBlur={(event) => {
-                        const nextName = event.target.value.trim() || t('appearance.theme_name_placeholder');
+                        const nextName =
+                          event.target.value.trim() || t('appearance.theme_name_placeholder');
                         if (nextName !== activeCustomTheme.name) {
                           renameCustomTheme(activeCustomTheme.id, nextName);
                         }
@@ -1947,15 +2117,21 @@ export function App() {
                         label={t(`theme.token.${field.key}.label`)}
                         description={t(`theme.token.${field.key}.description`)}
                         value={activeCustomTheme.tokens[field.key]}
-                        onChange={(value) => updateCustomThemeToken(activeCustomTheme.id, field.key, value)}
+                        onChange={(value) =>
+                          updateCustomThemeToken(activeCustomTheme.id, field.key, value)
+                        }
                       />
                     ))}
                   </div>
                 </div>
               ) : (
                 <div className="rounded-xl border border-dashed border-border bg-card/70 p-4">
-                  <p className="text-sm font-semibold text-foreground">{t('appearance.editor_title')}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{t('appearance.editor_help')}</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {t('appearance.editor_title')}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t('appearance.editor_help')}
+                  </p>
                 </div>
               )}
             </div>
@@ -1965,7 +2141,9 @@ export function App() {
             open={openSettingsSection === 'platformRules'}
             onToggle={() => toggleSettingsSection('platformRules')}
           >
-            <p className="text-xs text-muted-foreground">{t('platform_rules.description', { platform })}</p>
+            <p className="text-xs text-muted-foreground">
+              {t('platform_rules.description', { platform })}
+            </p>
           </SettingsSection>
           <SettingsSection
             title={t('settings.execution_profile')}
@@ -2133,15 +2311,30 @@ function TopBar({
             <Trash2 className="h-3.5 w-3.5" />
             {t('topbar.clear')}
           </Button>
-          <Button variant="ghost" size="sm" className={topBarGhostButtonClassName} onClick={onOpenPresets}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={topBarGhostButtonClassName}
+            onClick={onOpenPresets}
+          >
             <Save className="h-3.5 w-3.5" />
             {t('topbar.presets')}
           </Button>
-          <Button variant="ghost" size="sm" className={topBarGhostButtonClassName} onClick={onOpenHistory}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={topBarGhostButtonClassName}
+            onClick={onOpenHistory}
+          >
             <Clock3 className="h-3.5 w-3.5" />
             {t('topbar.history')}
           </Button>
-          <Button variant="ghost" size="sm" className={topBarGhostButtonClassName} onClick={onOpenSettings}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={topBarGhostButtonClassName}
+            onClick={onOpenSettings}
+          >
             <Settings2 className="h-3.5 w-3.5" />
             {t('topbar.settings')}
           </Button>
@@ -2178,9 +2371,7 @@ function TopBar({
               onClick={onRefresh}
               aria-label={t('topbar.refresh_preview')}
             >
-              <RefreshCcw
-                className={cn('h-4 w-4', busy === 'preview' && 'animate-spin')}
-              />
+              <RefreshCcw className={cn('h-4 w-4', busy === 'preview' && 'animate-spin')} />
             </IconButton>
           </Tooltip>
 
@@ -2194,9 +2385,7 @@ function TopBar({
 
           <Button
             size="sm"
-            disabled={
-              busy !== 'idle' || preview.summary.blocked || preview.summary.changed === 0
-            }
+            disabled={busy !== 'idle' || preview.summary.blocked || preview.summary.changed === 0}
             onClick={onExecute}
           >
             {t('topbar.rename')}
@@ -2227,7 +2416,9 @@ function TopBar({
                   <div className="min-w-0 flex-1">
                     <div className="font-medium">{candidate.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {candidate.kind === 'custom' ? t('topbar.theme_custom') : t('topbar.theme_preset')}
+                      {candidate.kind === 'custom'
+                        ? t('topbar.theme_custom')
+                        : t('topbar.theme_preset')}
                     </div>
                   </div>
                   {candidate.id === theme.id && <CheckCircle2 className="h-4 w-4 text-accent" />}
@@ -2250,11 +2441,19 @@ function TopBar({
                     <Minus className="h-4 w-4" />
                   </IconButton>
                 </Tooltip>
-                <Tooltip content={windowState.isMaximized ? t('topbar.restore_down') : t('topbar.maximize')}>
+                <Tooltip
+                  content={
+                    windowState.isMaximized ? t('topbar.restore_down') : t('topbar.maximize')
+                  }
+                >
                   <IconButton
                     className="h-8 w-8 rounded-lg hover:bg-surface-elevated"
                     onClick={onToggleMaximizeWindow}
-                    aria-label={windowState.isMaximized ? t('topbar.restore_window') : t('topbar.maximize_window')}
+                    aria-label={
+                      windowState.isMaximized
+                        ? t('topbar.restore_window')
+                        : t('topbar.maximize_window')
+                    }
                   >
                     {windowState.isMaximized ? (
                       <Copy className="h-3.5 w-3.5" />
@@ -2280,22 +2479,32 @@ function TopBar({
 
       {/* Status bar */}
       <div className="app-no-drag flex flex-wrap items-center gap-2 border-t border-border bg-surface/40 px-4 py-2 sm:px-5">
-        <Badge dot tone="ok">{t('topbar.status.ok', { count: preview.summary.ok })}</Badge>
-        <Badge dot tone="conflict">{t('topbar.status.conflicts', { count: preview.summary.conflict })}</Badge>
-        <Badge dot tone="invalid">{t('topbar.status.invalid', { count: preview.summary.invalid })}</Badge>
-        <Badge dot tone="unchanged">{t('topbar.status.unchanged', { count: preview.summary.unchanged })}</Badge>
+        <Badge dot tone="ok">
+          {t('topbar.status.ok', { count: preview.summary.ok })}
+        </Badge>
+        <Badge dot tone="conflict">
+          {t('topbar.status.conflicts', { count: preview.summary.conflict })}
+        </Badge>
+        <Badge dot tone="invalid">
+          {t('topbar.status.invalid', { count: preview.summary.invalid })}
+        </Badge>
+        <Badge dot tone="unchanged">
+          {t('topbar.status.unchanged', { count: preview.summary.unchanged })}
+        </Badge>
         <Badge dot>{selectedLabel}</Badge>
 
         {busy !== 'idle' && (
           <span className="flex items-center gap-1.5 text-xs text-accent">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-            {busy === 'preview' ? t('topbar.busy.preview') : busy === 'execute' ? t('topbar.busy.execute') : t('topbar.busy.undo')}
+            {busy === 'preview'
+              ? t('topbar.busy.preview')
+              : busy === 'execute'
+                ? t('topbar.busy.execute')
+                : t('topbar.busy.undo')}
           </span>
         )}
 
-        {error && (
-          <span className="ml-auto text-xs text-conflict">⚠ {error}</span>
-        )}
+        {error && <span className="ml-auto text-xs text-conflict">⚠ {error}</span>}
       </div>
     </Panel>
   );
@@ -2365,7 +2574,12 @@ function PreviewPanel({
           <table className="min-w-[700px] border-collapse text-left text-sm xl:min-w-full">
             <thead className="sticky top-0 z-10 border-b border-border bg-card">
               <tr>
-                {[t('preview.column.status'), t('preview.column.original'), t('preview.column.proposed'), t('preview.column.notes')].map((col) => (
+                {[
+                  t('preview.column.status'),
+                  t('preview.column.original'),
+                  t('preview.column.proposed'),
+                  t('preview.column.notes'),
+                ].map((col) => (
                   <th
                     key={col}
                     className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
@@ -2382,7 +2596,9 @@ function PreviewPanel({
                   className="border-b border-border/40 transition-colors hover:bg-surface/60"
                 >
                   <td className="px-4 py-2.5 whitespace-nowrap">
-                    <Badge dot tone={row.status}>{row.status}</Badge>
+                    <Badge dot tone={row.status}>
+                      {row.status}
+                    </Badge>
                   </td>
                   <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
                     {row.originalName}
@@ -2439,7 +2655,9 @@ function RulesPanel({
   const [collapsedRuleIds, setCollapsedRuleIds] = useState<string[]>([]);
 
   useEffect(() => {
-    setCollapsedRuleIds((current) => current.filter((ruleId) => rules.some((rule) => rule.id === ruleId)));
+    setCollapsedRuleIds((current) =>
+      current.filter((ruleId) => rules.some((rule) => rule.id === ruleId)),
+    );
   }, [rules]);
 
   function toggleRuleCollapsed(ruleId: string) {
@@ -2485,9 +2703,7 @@ function RulesPanel({
       />
 
       <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto p-4">
-        {rules.length === 0 && (
-          <EmptyState message={t('rules.empty')} />
-        )}
+        {rules.length === 0 && <EmptyState message={t('rules.empty')} />}
         {rules.map((rule, index) => (
           <RuleCard
             key={rule.id}
@@ -2575,7 +2791,11 @@ function RuleCard({
         dragging && 'scale-[0.99] opacity-70',
         dropTarget && !dragging && 'border-accent shadow-[0_0_0_1px_rgba(59,130,246,0.35)]',
       )}
-      style={{ borderColor: `${meta.color}30`, borderLeftColor: meta.color, borderLeftWidth: '3px' }}
+      style={{
+        borderColor: `${meta.color}30`,
+        borderLeftColor: meta.color,
+        borderLeftWidth: '3px',
+      }}
     >
       {/* Card header */}
       <div
@@ -2601,8 +2821,17 @@ function RuleCard({
               <GripVertical className="h-3.5 w-3.5" />
             </button>
             <Tooltip content={collapsed ? t('rules.expand') : t('rules.collapse')}>
-              <IconButton className="h-7 w-7" onClick={onToggleCollapsed} aria-label={collapsed ? t('rules.expand') : t('rules.collapse')}>
-                <ChevronDown className={cn('h-3.5 w-3.5 transition-transform duration-150', !collapsed && 'rotate-180')} />
+              <IconButton
+                className="h-7 w-7"
+                onClick={onToggleCollapsed}
+                aria-label={collapsed ? t('rules.expand') : t('rules.collapse')}
+              >
+                <ChevronDown
+                  className={cn(
+                    'h-3.5 w-3.5 transition-transform duration-150',
+                    !collapsed && 'rotate-180',
+                  )}
+                />
               </IconButton>
             </Tooltip>
           </div>
@@ -2616,7 +2845,9 @@ function RuleCard({
           </span>
           <div className="flex min-h-7 flex-col justify-center text-center">
             <p className="text-sm font-semibold leading-none text-foreground">{meta.label}</p>
-            <p className="mt-1 text-[10px] leading-none text-muted-foreground">{t('rules.step', { count: index + 1 })}</p>
+            <p className="mt-1 text-[10px] leading-none text-muted-foreground">
+              {t('rules.step', { count: index + 1 })}
+            </p>
           </div>
         </div>
 
@@ -2695,9 +2926,7 @@ function NewNameRuleEditor({
           onChange={(e) => onChange({ ...rule, template: e.target.value })}
           placeholder={t('editor.new_name.placeholder')}
         />
-        <p className="text-xs text-muted-foreground">
-          {t('editor.new_name.help')}
-        </p>
+        <p className="text-xs text-muted-foreground">{t('editor.new_name.help')}</p>
       </div>
 
       <Checkbox
@@ -2963,7 +3192,9 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
             <SelectItem value="collapse_spaces">{t('editor.trim.collapse_spaces')}</SelectItem>
             <SelectItem value="remove_spaces">{t('editor.trim.remove_spaces')}</SelectItem>
             <SelectItem value="remove_dashes">{t('editor.trim.remove_dashes')}</SelectItem>
-            <SelectItem value="remove_underscores">{t('editor.trim.remove_underscores')}</SelectItem>
+            <SelectItem value="remove_underscores">
+              {t('editor.trim.remove_underscores')}
+            </SelectItem>
           </SelectContent>
         </Select>
       );
@@ -2989,7 +3220,9 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
         <div className="grid gap-2 sm:grid-cols-2">
           <Select
             value={rule.position}
-            onValueChange={(value) => onChange({ ...rule, position: value as typeof rule.position })}
+            onValueChange={(value) =>
+              onChange({ ...rule, position: value as typeof rule.position })
+            }
           >
             <SelectTrigger>
               <SelectValue />
@@ -2997,7 +3230,9 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
             <SelectContent>
               <SelectItem value="prefix">{t('editor.position.prefix')}</SelectItem>
               <SelectItem value="suffix">{t('editor.position.suffix')}</SelectItem>
-              <SelectItem value="before_extension">{t('editor.position.before_extension')}</SelectItem>
+              <SelectItem value="before_extension">
+                {t('editor.position.before_extension')}
+              </SelectItem>
             </SelectContent>
           </Select>
           <Input
@@ -3031,7 +3266,9 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
         <div className="grid gap-2 sm:grid-cols-2">
           <Select
             value={rule.position}
-            onValueChange={(value) => onChange({ ...rule, position: value as typeof rule.position })}
+            onValueChange={(value) =>
+              onChange({ ...rule, position: value as typeof rule.position })
+            }
           >
             <SelectTrigger>
               <SelectValue />
@@ -3039,7 +3276,9 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
             <SelectContent>
               <SelectItem value="prefix">{t('editor.position.prefix')}</SelectItem>
               <SelectItem value="suffix">{t('editor.position.suffix')}</SelectItem>
-              <SelectItem value="before_extension">{t('editor.position.before_extension')}</SelectItem>
+              <SelectItem value="before_extension">
+                {t('editor.position.before_extension')}
+              </SelectItem>
             </SelectContent>
           </Select>
           <Select
@@ -3081,7 +3320,9 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
         <div className="grid gap-2 sm:grid-cols-2">
           <Select
             value={rule.position}
-            onValueChange={(value) => onChange({ ...rule, position: value as typeof rule.position })}
+            onValueChange={(value) =>
+              onChange({ ...rule, position: value as typeof rule.position })
+            }
           >
             <SelectTrigger>
               <SelectValue />
@@ -3089,7 +3330,9 @@ function RuleEditor({ rule, onChange }: { rule: RenameRule; onChange: (r: Rename
             <SelectContent>
               <SelectItem value="prefix">{t('editor.position.prefix')}</SelectItem>
               <SelectItem value="suffix">{t('editor.position.suffix')}</SelectItem>
-              <SelectItem value="before_extension">{t('editor.position.before_extension')}</SelectItem>
+              <SelectItem value="before_extension">
+                {t('editor.position.before_extension')}
+              </SelectItem>
             </SelectContent>
           </Select>
           <Input
@@ -3159,14 +3402,18 @@ function PresetList({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-foreground">{preset.name}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{t('presets.rules_count', { count: preset.rules.length })}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {t('presets.rules_count', { count: preset.rules.length })}
+              </p>
             </div>
             <Badge tone={preset.isSample ? 'accent' : 'ok'} dot>
               {preset.isSample ? t('presets.sample') : t('presets.saved')}
             </Badge>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button size="sm" variant="secondary" onClick={() => onLoad(preset)}>{t('presets.load')}</Button>
+            <Button size="sm" variant="secondary" onClick={() => onLoad(preset)}>
+              {t('presets.load')}
+            </Button>
             <Button
               size="sm"
               variant="ghost"
@@ -3176,7 +3423,9 @@ function PresetList({
               {t('presets.edit_name')}
             </Button>
             {onDelete && !preset.isSample && (
-              <Button size="sm" variant="danger" onClick={() => onDelete(preset)}>{t('common.delete')}</Button>
+              <Button size="sm" variant="danger" onClick={() => onDelete(preset)}>
+                {t('common.delete')}
+              </Button>
             )}
           </div>
         </div>
@@ -3210,7 +3459,13 @@ function getAvailableSourceModes(sources: SourceSelection[]): SourceMode[] {
     modes.push('picked_files');
   }
   if (hasDirectories) {
-    modes.push('picked_folders', 'top_level_folders', 'subfolders', 'top_level_files', 'files_recursive');
+    modes.push(
+      'picked_folders',
+      'top_level_folders',
+      'subfolders',
+      'top_level_files',
+      'files_recursive',
+    );
   }
 
   return modes;

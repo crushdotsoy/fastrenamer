@@ -2,9 +2,11 @@ import { en } from './en';
 
 export const de = {
   ...en,
-  'topbar.tagline': (vars?: Record<string, unknown>) => `v${vars?.version ?? ''} · Stapelweise umbenennen`,
+  'topbar.tagline': (vars?: Record<string, unknown>) =>
+    `v${vars?.version ?? ''} · Stapelweise umbenennen`,
   'locale.label': 'Sprache',
-  'locale.helper': 'Andert die App-Sprache. Community-Ubersetzungen liegen in src/renderer/locales.',
+  'locale.helper':
+    'Andert die App-Sprache. Community-Ubersetzungen liegen in src/renderer/locales.',
   'settings.language': 'Sprache',
   'settings.appearance': 'Darstellung',
   'settings.title': 'Einstellungen',
@@ -22,8 +24,10 @@ export const de = {
   'updates.check_now': 'Jetzt prufen',
   'updates.download': 'Update herunterladen',
   'updates.restart_install': 'Neu starten zum Installieren',
-  'updates.summary.up_to_date_manual': 'Diese Installation entspricht der zuletzt veroffentlichten Release. Zukunftige Updates offnen GitHub fur einen manuellen Download.',
-  'updates.summary.idle_manual': 'Diese Build sucht nach Updates, aber Installationen mussen manuell von GitHub Releases heruntergeladen werden.',
+  'updates.summary.up_to_date_manual':
+    'Diese Installation entspricht der zuletzt veroffentlichten Release. Zukunftige Updates offnen GitHub fur einen manuellen Download.',
+  'updates.summary.idle_manual':
+    'Diese Build sucht nach Updates, aber Installationen mussen manuell von GitHub Releases heruntergeladen werden.',
   'appearance.cycle': 'Wechseln',
   'appearance.new_custom': 'Neues eigenes Theme',
 } as const;

@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import type {
   DirectoryListing,
   ExecuteRenameBatchRequest,
@@ -16,6 +15,7 @@ import type {
   UndoRenameBatchRequest,
   UndoRenameBatchResult,
 } from '@fast-renamer/rename-engine';
+import { z } from 'zod';
 
 const baseRuleSchema = z.object({
   id: z.string().min(1),

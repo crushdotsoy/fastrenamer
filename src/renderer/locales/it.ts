@@ -2,9 +2,11 @@ import { en } from './en';
 
 export const it = {
   ...en,
-  'topbar.tagline': (vars?: Record<string, unknown>) => `v${vars?.version ?? ''} · rinomina in blocco`,
+  'topbar.tagline': (vars?: Record<string, unknown>) =>
+    `v${vars?.version ?? ''} · rinomina in blocco`,
   'locale.label': 'Lingua',
-  'locale.helper': 'Cambia la lingua dell applicazione. Le traduzioni della community si trovano in src/renderer/locales.',
+  'locale.helper':
+    'Cambia la lingua dell applicazione. Le traduzioni della community si trovano in src/renderer/locales.',
   'settings.language': 'Lingua',
   'settings.appearance': 'Aspetto',
   'settings.title': 'Impostazioni',
@@ -22,8 +24,10 @@ export const it = {
   'updates.check_now': 'Controlla ora',
   'updates.download': 'Scarica aggiornamento',
   'updates.restart_install': 'Riavvia per installare',
-  'updates.summary.up_to_date_manual': 'Questa installazione corrisponde all ultima release pubblicata. I futuri aggiornamenti apriranno GitHub per un download manuale.',
-  'updates.summary.idle_manual': 'Questa build controlla gli aggiornamenti, ma le installazioni devono essere scaricate manualmente da GitHub Releases.',
+  'updates.summary.up_to_date_manual':
+    'Questa installazione corrisponde all ultima release pubblicata. I futuri aggiornamenti apriranno GitHub per un download manuale.',
+  'updates.summary.idle_manual':
+    'Questa build controlla gli aggiornamenti, ma le installazioni devono essere scaricate manualmente da GitHub Releases.',
   'appearance.cycle': 'Cambia',
   'appearance.new_custom': 'Nuovo tema personalizzato',
 } as const;

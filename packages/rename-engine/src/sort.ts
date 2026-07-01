@@ -28,10 +28,7 @@ function getItemPath(item: SortablePathItem) {
 }
 
 function splitPathSegments(candidatePath: string) {
-  return candidatePath
-    .replace(/\\/g, '/')
-    .split('/')
-    .filter(Boolean);
+  return candidatePath.replace(/\\/g, '/').split('/').filter(Boolean);
 }
 
 function isAncestorDirectory(left: SortablePathItem, right: SortablePathItem) {
@@ -96,7 +93,6 @@ export function compareItemsBySortMode(
         compareNatural(left.name, right.name) ||
         compareNatural(leftPath, rightPath)
       );
-    case 'natural_path':
     default:
       return compareNatural(leftPath, rightPath);
   }
