@@ -87,14 +87,17 @@ const SAMPLE_PRESETS: Array<{ name: string; rules: RenameRule[] }> = [
   },
 ];
 
+export const HISTORY_RETENTION_LIMIT = 100;
+
 export class AppDatabase {
   private database: DatabaseSync;
 
-  constructor() {
-    const userData = app.getPath('userData');
-    fs.mkdirSync(userData, { recursive: true });
-    const databasePath = path.join(userData, 'fast-renamer.sqlite');
-    this.database = new DatabaseSync(databasePath);
+  constructor(databasePath?: string) {
+    const resolvedPath =
+      databasePath ??
+      path.join(app.getPath('userData'), 'fast-renamer.sqlite');
+    fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
+    this.database = new DatabaseSync(resolvedPath);
     this.database.exec('PRAGMA foreign_keys = ON;');
     this.migrate();
     this.seedSamplePresets();
@@ -282,7 +285,29 @@ export class AppDatabase {
       insertItem.run(batchId, item.sourcePath, item.targetPath, item.isDirectory ? 1 : 0);
     }
 
+    this.pruneOldBatches();
+
     return batchId;
+  }
+
+  private pruneOldBatches() {
+    const staleRows = this.database
+      .prepare(
+        `SELECT id
+         FROM rename_batches
+         ORDER BY created_at DESC
+         LIMIT -1 OFFSET ?`,
+      )
+      .all(HISTORY_RETENTION_LIMIT) as Array<Record<string, unknown>>;
+
+    if (staleRows.length === 0) {
+      return;
+    }
+
+    const deleteBatch = this.database.prepare('DELETE FROM rename_batches WHERE id = ?');
+    for (const row of staleRows) {
+      deleteBatch.run(Number(row.id));
+    }
   }
 
   getBatchItems(batchId: number): RenameBatchRecord[] {
