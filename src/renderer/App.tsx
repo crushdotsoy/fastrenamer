@@ -43,7 +43,7 @@ import type {
   SourceSelection,
 } from '@fast-renamer/rename-engine/types';
 import { sortItemsByMode } from '@fast-renamer/rename-engine/sort';
-import type { UpdateState, WindowState } from '@shared/contracts';
+import type { UpdateChannel, UpdateState, WindowState } from '@shared/contracts';
 import {
   Badge,
   Button,
@@ -556,6 +556,7 @@ const DEFAULT_WINDOW_STATE: WindowState = {
 const DEFAULT_UPDATE_STATE: UpdateState = {
   status: 'idle',
   currentVersion: '0.0.0',
+  channel: 'stable',
 };
 
 type UpdateToastTone = 'default' | 'ok' | 'accent' | 'conflict';
@@ -1131,6 +1132,20 @@ export function App() {
     setUpdateAction('checking');
     try {
       const nextState = await window.advancedRenamer.checkForUpdates();
+      setUpdateState(nextState);
+    } finally {
+      setUpdateAction((current) => (current === 'checking' ? 'idle' : current));
+    }
+  }
+
+  async function changeUpdateChannel(channel: UpdateChannel) {
+    if (channel === updateState.channel) {
+      return;
+    }
+
+    setUpdateAction('checking');
+    try {
+      const nextState = await window.advancedRenamer.setUpdateChannel(channel);
       setUpdateState(nextState);
     } finally {
       setUpdateAction((current) => (current === 'checking' ? 'idle' : current));
@@ -1779,14 +1794,40 @@ export function App() {
           <SettingsSection
             title={t('settings.updates')}
             badge={(
-              <Badge tone={getUpdateTone(updateState.status)} dot>
-                {getUpdateStatusLabel(updateState.status, t)}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge tone="unchanged">
+                  {updateState.channel === 'ea' ? t('updates.channel.ea') : t('updates.channel.stable')}
+                </Badge>
+                <Badge tone={getUpdateTone(updateState.status)} dot>
+                  {getUpdateStatusLabel(updateState.status, t)}
+                </Badge>
+              </div>
             )}
             open={openSettingsSection === 'updates'}
             onToggle={() => toggleSettingsSection('updates')}
           >
-            <p className="text-xs text-muted-foreground">{getUpdateSummary(updateState, t)}</p>
+            <div className="rounded-xl border border-border bg-card p-3">
+              <label className="space-y-2">
+                <span className="text-xs text-muted-foreground">{t('updates.channel.label')}</span>
+                <Select
+                  value={updateState.channel}
+                  onValueChange={(value) => void changeUpdateChannel(value as UpdateChannel)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="stable">{t('updates.channel.stable')}</SelectItem>
+                    <SelectItem value="ea">{t('updates.channel.ea')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {updateState.channel === 'ea' ? t('updates.channel.helper_ea') : t('updates.channel.helper_stable')}
+                </p>
+              </label>
+            </div>
+
+            <p className="mt-3 text-xs text-muted-foreground">{getUpdateSummary(updateState, t)}</p>
 
             <div className="mt-3 flex flex-wrap gap-2">
               <Badge>{t('updates.current', { version: updateState.currentVersion })}</Badge>

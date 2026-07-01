@@ -1,52 +1,46 @@
-name: Build
+name: Release
 
 permissions:
   contents: write
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - "v*"
-  pull_request:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
 
 jobs:
-  verify:
-    name: Verify
+  resolve_tag:
+    name: Resolve Release Tag
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+
+    outputs:
+      tag_name: ${{ steps.tag.outputs.tag_name }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.14
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Typecheck
-        run: bun run typecheck
-
-      - name: Test
-        run: bun run test
-
-      - name: Build
-        run: bun run build
+      - name: Resolve v* tag at commit
+        id: tag
+        shell: bash
+        run: |
+          tag_name="$(git tag --points-at HEAD | grep -E '^v' | head -n 1 || true)"
+          if [ -z "${tag_name}" ]; then
+            echo "No stable release tag found for this CI run."
+          fi
+          echo "tag_name=${tag_name}" >> "${GITHUB_OUTPUT}"
 
   create_release:
     name: Create Draft Release
     needs:
-      - verify
-    if: startsWith(github.ref, 'refs/tags/v')
+      - resolve_tag
+    if: needs.resolve_tag.outputs.tag_name != ''
     runs-on: ubuntu-latest
 
     steps:
@@ -55,16 +49,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          TAG_NAME: ${{ needs.resolve_tag.outputs.tag_name }}
         run: |
-          gh release view "${GITHUB_REF_NAME}" --repo "${GH_REPO}" >/dev/null 2>&1 || \
-          gh release create "${GITHUB_REF_NAME}" --repo "${GH_REPO}" --title "${GITHUB_REF_NAME}" --generate-notes --draft
+          gh release view "${TAG_NAME}" --repo "${GH_REPO}" >/dev/null 2>&1 || \
+          gh release create "${TAG_NAME}" --repo "${GH_REPO}" --title "${TAG_NAME}" --generate-notes --draft
 
   build:
-    name: Build ${{ matrix.platform_name }}
+    name: Build Stable ${{ matrix.platform_name }}
     needs:
-      - verify
+      - resolve_tag
       - create_release
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: needs.resolve_tag.outputs.tag_name != ''
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -73,17 +68,19 @@ jobs:
         include:
           - os: macos-latest
             platform_name: macOS
-            build_command: bun run electron:build:mac
+            build_command: bun run build && electron-builder --mac --publish never
           - os: windows-latest
             platform_name: Windows
-            build_command: bun run electron:build:win
+            build_command: bun run build && electron-builder --win --publish never
           - os: ubuntu-latest
             platform_name: Linux
-            build_command: bun run electron:build:linux
+            build_command: bun run build && electron-builder --linux --publish never
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -97,6 +94,17 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Set stable package version
+        shell: bash
+        env:
+          TAG_NAME: ${{ needs.resolve_tag.outputs.tag_name }}
+        run: |
+          stable_version="${TAG_NAME#v}"
+          jq --arg version "${stable_version}" '.version = $version' package.json > package.json.tmp
+          mv package.json.tmp package.json
+          jq --arg version "${stable_version}" '.version = $version' packages/rename-engine/package.json > packages/rename-engine/package.json.tmp
+          mv packages/rename-engine/package.json.tmp packages/rename-engine/package.json
 
       - name: Build app
         run: ${{ matrix.build_command }}
@@ -106,17 +114,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          TAG_NAME: ${{ needs.resolve_tag.outputs.tag_name }}
         run: |
           files=()
           latest_files=()
-          ref_version="${GITHUB_REF_NAME#v}"
+          ref_version="${TAG_NAME#v}"
 
           make_latest_name() {
             local filename="$1"
             local latest_name="$filename"
 
-            if [[ -n "${GITHUB_REF_NAME}" && "$latest_name" == *"${GITHUB_REF_NAME}"* ]]; then
-              latest_name="${latest_name/${GITHUB_REF_NAME}/latest}"
+            if [[ -n "${TAG_NAME}" && "$latest_name" == *"${TAG_NAME}"* ]]; then
+              latest_name="${latest_name/${TAG_NAME}/latest}"
             elif [[ -n "${ref_version}" && "$latest_name" == *"${ref_version}"* ]]; then
               latest_name="${latest_name/${ref_version}/latest}"
             else
@@ -143,9 +152,15 @@ jobs:
           }
 
           while IFS= read -r file; do
+            filename="$(basename "$file")"
+            case "$filename" in
+              builder-debug.yml)
+                continue
+                ;;
+            esac
+
             files+=("$file")
 
-            filename="$(basename "$file")"
             case "$filename" in
               *.yml|*.yaml|*.blockmap)
                 continue
@@ -156,18 +171,21 @@ jobs:
             latest_file="release/${latest_name}"
             cp "$file" "$latest_file"
             latest_files+=("$latest_file")
-          done < <(find release -maxdepth 1 -type f ! -name 'builder-debug.yml' | sort)
+          done < <(find release -maxdepth 1 -type f | sort)
+
           if [ ${#files[@]} -eq 0 ]; then
             echo "No release files found"
             exit 1
           fi
-          gh release upload "${GITHUB_REF_NAME}" "${files[@]}" "${latest_files[@]}" --repo "${GH_REPO}" --clobber
+
+          gh release upload "${TAG_NAME}" "${files[@]}" "${latest_files[@]}" --repo "${GH_REPO}" --clobber
 
   publish_release:
     name: Publish Release
     needs:
+      - resolve_tag
       - build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: needs.resolve_tag.outputs.tag_name != ''
     runs-on: ubuntu-latest
 
     steps:
@@ -176,5 +194,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          TAG_NAME: ${{ needs.resolve_tag.outputs.tag_name }}
         run: |
-          gh release edit "${GITHUB_REF_NAME}" --repo "${GH_REPO}" --draft=false
+          gh release edit "${TAG_NAME}" --repo "${GH_REPO}" --draft=false

@@ -30,6 +30,8 @@ const api: AdvancedRenamerApi = {
     };
   },
   getUpdateState: () => ipcRenderer.invoke('updates:getState'),
+  getUpdateChannel: () => ipcRenderer.invoke('updates:getChannel'),
+  setUpdateChannel: (channel) => ipcRenderer.invoke('updates:setChannel', channel),
   checkForUpdates: () => ipcRenderer.invoke('updates:check'),
   quitAndInstallUpdate: () => ipcRenderer.invoke('updates:quitAndInstall'),
   openUpdateDownload: () => ipcRenderer.invoke('updates:openDownload'),
