@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, session, shell } from 'electron';
 import { compareNatural } from '@fast-renamer/rename-engine';
 import {
   pickSourcesRequestSchema,
@@ -52,6 +52,33 @@ function resolvePreloadPath() {
   }
 
   return resolved;
+}
+
+function applyContentSecurityPolicy() {
+  const devServerUrl = process.env.VITE_DEV_SERVER_URL;
+  const connectSrc = devServerUrl
+    ? "'self' ws: wss: http://localhost:* https://github.com"
+    : "'self' https://github.com";
+
+  const policy = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    `connect-src ${connectSrc}`,
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+  ].join('; ');
+
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [policy],
+      },
+    });
+  });
 }
 
 function createWindow() {
@@ -212,6 +239,7 @@ function registerIpc() {
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
+  applyContentSecurityPolicy();
   database = new AppDatabase();
   updater = new AppUpdaterManager(() => mainWindow);
   registerIpc();
