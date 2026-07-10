@@ -292,7 +292,12 @@ function registerIpc() {
     }
 
     const raw = await fs.promises.readFile(filePaths[0], 'utf8');
-    const payload = JSON.parse(raw) as unknown;
+    let payload: unknown;
+    try {
+      payload = JSON.parse(raw) as unknown;
+    } catch {
+      throw new Error('The selected file is not valid JSON.');
+    }
     const presets = normalizePresetImportPayload(payload);
     const importedCount = database.importUserPresets(presets);
 
