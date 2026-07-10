@@ -51,7 +51,7 @@ describe('AppDatabase history retention', () => {
     }
 
     const history = database.listHistory();
-    expect(history).toHaveLength(50);
+    expect(history).toHaveLength(HISTORY_RETENTION_LIMIT);
     expect(history[0]?.sourceRoots[0]).toBe(`/tmp/batch-${HISTORY_RETENTION_LIMIT + 4}`);
   });
 });
