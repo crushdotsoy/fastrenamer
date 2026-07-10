@@ -920,6 +920,7 @@ export function App() {
   const resizeContainerWidth = useRef(0);
   const previousUpdateStatus = useRef<UpdateState['status'] | null>(null);
   const updateToastId = useRef(0);
+  const previewGenerationRef = useRef(0);
 
   const sourcePaths = useMemo(() => sources.map((s) => s.path), [sources]);
   const previewRequest = useMemo(
@@ -934,9 +935,16 @@ export function App() {
   useEffect(() => { void reloadMetadata(); }, []);
 
   useEffect(() => {
-    if (sources.length === 0) { setPreview(DEFAULT_PREVIEW); return; }
+    if (sources.length === 0) {
+      previewGenerationRef.current += 1;
+      setPreview(DEFAULT_PREVIEW);
+      return;
+    }
     const t = window.setTimeout(() => { void refreshPreview(); }, 180);
-    return () => window.clearTimeout(t);
+    return () => {
+      window.clearTimeout(t);
+      previewGenerationRef.current += 1;
+    };
   }, [previewRequest, sources.length]);
 
   useEffect(() => {
@@ -1314,15 +1322,24 @@ export function App() {
 
   async function refreshPreview() {
     if (previewRequest.sourcePaths.length === 0) return;
+    const generation = ++previewGenerationRef.current;
     setBusy('preview');
     setError(null);
     try {
       const next = await window.advancedRenamer.generatePreview(previewRequest);
+      if (generation !== previewGenerationRef.current) {
+        return;
+      }
       startTransition(() => setPreview(next));
     } catch (err) {
+      if (generation !== previewGenerationRef.current) {
+        return;
+      }
       setError(err instanceof Error ? err.message : t('error.generate_preview'));
     } finally {
-      setBusy('idle');
+      if (generation === previewGenerationRef.current) {
+        setBusy('idle');
+      }
     }
   }
 
