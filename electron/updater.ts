@@ -71,7 +71,7 @@ function loadStoredUpdateChannel(): UpdateChannel | undefined {
   try {
     const raw = fs.readFileSync(getChannelFilePath(), 'utf8');
     const parsed = JSON.parse(raw) as { channel?: unknown };
-    if (parsed.channel === 'ea' || parsed.channel === 'stable') {
+    if (parsed.channel === 'ea' || parsed.channel === 'stable' || parsed.channel === 'experimental') {
       return parsed.channel;
     }
   } catch {

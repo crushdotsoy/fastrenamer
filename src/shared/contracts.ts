@@ -226,7 +226,7 @@ export type UpdateStatus =
   | 'installing'
   | 'error';
 
-export type UpdateChannel = 'stable' | 'ea';
+export type UpdateChannel = 'stable' | 'ea' | 'experimental';
 
 export interface UpdateState {
   status: UpdateStatus;

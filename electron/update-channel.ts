@@ -7,10 +7,18 @@ function toReleaseTag(version: string) {
 }
 
 export function resolveDefaultUpdateChannel(version: string): UpdateChannel {
+  if (version.includes('-experimental.')) {
+    return 'experimental';
+  }
+
   return version.includes('-ea') ? 'ea' : 'stable';
 }
 
 export function toUpdaterChannel(channel: UpdateChannel) {
+  if (channel === 'experimental') {
+    return 'experimental';
+  }
+
   return channel === 'ea' ? 'ea' : 'latest';
 }
 
@@ -19,11 +27,11 @@ export function applyUpdateChannelSettings(
   channel: UpdateChannel,
 ) {
   updater.channel = toUpdaterChannel(channel);
-  updater.allowPrerelease = channel === 'ea';
+  updater.allowPrerelease = channel === 'ea' || channel === 'experimental';
 }
 
 export function getReleaseDownloadUrl(channel: UpdateChannel, version?: string) {
-  if (channel === 'ea') {
+  if (channel === 'ea' || channel === 'experimental') {
     if (version) {
       return `${GITHUB_RELEASES_URL}/tag/${toReleaseTag(version)}`;
     }
