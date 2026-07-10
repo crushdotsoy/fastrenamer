@@ -2,13 +2,52 @@ name: EA Release
 
 permissions:
   contents: write
+  actions: read
 
 on:
   workflow_dispatch:
 
 jobs:
+  verify_ci:
+    name: Verify CI Passed
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require main branch
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "EA releases can only be created from main."
+            exit 1
+          fi
+
+      - name: Check CI succeeded for this commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          conclusion="$(
+            gh run list \
+              --repo "${GH_REPO}" \
+              --workflow=ci.yml \
+              --commit="${SHA}" \
+              --json conclusion,status \
+              --jq '[.[] | select(.status == "completed")] | first | .conclusion // empty'
+          )"
+
+          if [ "${conclusion}" != "success" ]; then
+            echo "CI has not completed successfully for commit ${SHA} (conclusion: ${conclusion:-none})."
+            exit 1
+          fi
+
+          echo "CI succeeded for commit ${SHA}"
+
   prepare_ea_version:
     name: Prepare EA Version
+    needs:
+      - verify_ci
     runs-on: ubuntu-latest
 
     outputs:
