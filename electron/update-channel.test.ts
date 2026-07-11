@@ -15,9 +15,14 @@ describe('update channel helpers', () => {
     expect(resolveDefaultUpdateChannel('0.2.6-ea.42')).toBe('ea');
   });
 
+  it('defaults experimental installs to the experimental channel', () => {
+    expect(resolveDefaultUpdateChannel('0.2.6-experimental.42')).toBe('experimental');
+  });
+
   it('maps app channels to electron-updater channels', () => {
     expect(toUpdaterChannel('stable')).toBe('latest');
     expect(toUpdaterChannel('ea')).toBe('ea');
+    expect(toUpdaterChannel('experimental')).toBe('experimental');
   });
 
   it('configures electron-updater for each channel', () => {
@@ -28,6 +33,10 @@ describe('update channel helpers', () => {
 
     applyUpdateChannelSettings(updater, 'ea');
     expect(updater.channel).toBe('ea');
+    expect(updater.allowPrerelease).toBe(true);
+
+    applyUpdateChannelSettings(updater, 'experimental');
+    expect(updater.channel).toBe('experimental');
     expect(updater.allowPrerelease).toBe(true);
 
     applyUpdateChannelSettings(updater, 'stable');
@@ -43,6 +52,9 @@ describe('update channel helpers', () => {
     expect(getReleaseDownloadUrl('ea')).toBe('https://github.com/crushdotsoy/fastrenamer/releases?prerelease=1');
     expect(getReleaseDownloadUrl('ea', '0.2.6-ea.42')).toBe(
       'https://github.com/crushdotsoy/fastrenamer/releases/tag/v0.2.6-ea.42',
+    );
+    expect(getReleaseDownloadUrl('experimental', '0.2.6-experimental.42')).toBe(
+      'https://github.com/crushdotsoy/fastrenamer/releases/tag/v0.2.6-experimental.42',
     );
   });
 });

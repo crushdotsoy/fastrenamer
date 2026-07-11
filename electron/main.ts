@@ -332,7 +332,7 @@ function registerIpc() {
   ipcMain.handle('updates:getState', () => updater.getState());
   ipcMain.handle('updates:getChannel', () => updater.getChannel());
   ipcMain.handle('updates:setChannel', (_event, channel: unknown) => {
-    if (channel !== 'stable' && channel !== 'ea') {
+    if (channel !== 'stable' && channel !== 'ea' && channel !== 'experimental') {
       throw new Error('Invalid update channel.');
     }
 
