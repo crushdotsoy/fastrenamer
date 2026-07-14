@@ -10,7 +10,7 @@ on:
 jobs:
   verify_ci:
     name: Verify CI Passed
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
 
     steps:
       - name: Require main branch
@@ -48,7 +48,7 @@ jobs:
     name: Prepare EA Version
     needs:
       - verify_ci
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
 
     outputs:
       ea_version: ${{ steps.version.outputs.ea_version }}
@@ -72,7 +72,7 @@ jobs:
     name: Create EA Release
     needs:
       - prepare_ea_version
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
 
     steps:
       - name: Checkout

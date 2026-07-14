@@ -14,7 +14,7 @@ jobs:
   resolve_tag:
     name: Resolve Release Tag
     if: github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
 
     outputs:
       tag_name: ${{ steps.tag.outputs.tag_name }}
@@ -41,7 +41,7 @@ jobs:
     needs:
       - resolve_tag
     if: needs.resolve_tag.outputs.tag_name != ''
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
 
     steps:
       - name: Create draft GitHub Release
@@ -186,7 +186,7 @@ jobs:
       - resolve_tag
       - build
     if: needs.resolve_tag.outputs.tag_name != ''
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
 
     steps:
       - name: Publish draft release
