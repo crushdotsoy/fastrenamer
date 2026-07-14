@@ -338,7 +338,7 @@ export class AppDatabase {
       .prepare(
         `SELECT id
          FROM rename_batches
-         ORDER BY created_at DESC
+         ORDER BY created_at DESC, id DESC
          LIMIT -1 OFFSET ?`,
       )
       .all(HISTORY_RETENTION_LIMIT) as Array<Record<string, unknown>>;
@@ -406,7 +406,7 @@ export class AppDatabase {
       .prepare(
         `SELECT id, created_at, source_roots_json, rules_json, preview_summary_json, renamed_count, undone_at
          FROM rename_batches
-         ORDER BY created_at DESC
+         ORDER BY created_at DESC, id DESC
          LIMIT 50`,
       )
       .all() as Array<Record<string, unknown>>;
