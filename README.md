@@ -2,9 +2,9 @@
 
 Fast Renamer is a desktop batch-renaming utility built with Bun, Electron, React, TypeScript, Tailwind, and `shadcn/ui`.
 
-## v0.2.0
+## v0.2.7
 
-Fast Renamer 0.2.0 focuses on safe, desktop-style bulk renaming with a live preview and reusable rule stacks.
+Fast Renamer 0.2.7 continues the 0.2.x line with preset sharing, dual release channels, and ongoing desktop polish.
 
 ### Highlights
 
@@ -12,6 +12,8 @@ Fast Renamer 0.2.0 focuses on safe, desktop-style bulk renaming with a live prev
 - Live preview with conflict and invalid-name blocking
 - Rule stack with drag-and-drop reordering
 - Custom Rule beta with safe inline expressions
+- Preset import and export for sharing rule stacks
+- Stable and Early Access update channels
 - Direct file and folder renaming
 - Source modes for:
   - picked files

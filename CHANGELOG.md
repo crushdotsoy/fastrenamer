@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+## 0.2.7 - 2026-07-10
+
+### Added
+
+- Preset import and export flows for sharing user rule stacks
+- Early Access and Stable update channels with in-app channel switching
+- Letter sequence rename rule and reverse sequencing for `New Name` templates
+- Top bar component extracted from the main app shell
+- React error boundary with reload recovery UI
+- Renderer theme and custom-rule unit tests
+- Content Security Policy for renderer responses
+- Rename history batch pruning beyond a retention limit
+- Zod validation for remaining IPC handlers
+
+### Changed
+
+- Bumped Electron and UI dependency versions
+- EA releases now use versioned prerelease tags like `v0.2.7-ea.42`
+- Release and EA release workflows now gate on successful CI runs
+- CI now runs production builds and pins Bun to 1.3.14
+- Aligned workspace package versions and release documentation
+
+### Fixed
+
+- Preload script drift by using the Vite-built preload bundle
+- Locale persistence for all supported languages
+- Renderer test typecheck configuration
+- Packaged app updater externalization and CI electron-builder invocation
+
 ## 0.2.0 - 2026-04-10
 
 ### Added
