@@ -40,7 +40,7 @@ import {
   Tooltip,
   cn,
 } from '../ui';
-import { RULE_TYPE_ORDER } from '../../app/defaults';
+import { RULE_TYPE_CATEGORIES } from '../../app/defaults';
 import {
   CUSTOM_RULE_HELPERS,
   createRule,
@@ -100,24 +100,32 @@ export function RulesPanel({
                 {t('rules.add')}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="min-w-56">
               <DropdownMenuLabel>{t('rules.type')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {RULE_TYPE_ORDER.map((type) => {
-                const meta = ruleMeta[type];
-                const Icon = meta.icon;
-                return (
-                  <DropdownMenuItem key={type} onClick={() => onAddRule(type)}>
-                    <span
-                      className="flex h-5 w-5 items-center justify-center rounded"
-                      style={{ backgroundColor: `${meta.color}22`, color: meta.color }}
-                    >
-                      <Icon className="h-3 w-3" />
-                    </span>
-                    {meta.label}
-                  </DropdownMenuItem>
-                );
-              })}
+              {RULE_TYPE_CATEGORIES.map((category, categoryIndex) => (
+                <div key={category.id}>
+                  {categoryIndex > 0 && <DropdownMenuSeparator />}
+                  <DropdownMenuLabel className="py-1.5 text-[9px] tracking-[0.18em]">
+                    {t(`rules.category.${category.id}`)}
+                  </DropdownMenuLabel>
+                  {category.types.map((type) => {
+                    const meta = ruleMeta[type];
+                    const Icon = meta.icon;
+                    return (
+                      <DropdownMenuItem key={type} onClick={() => onAddRule(type)} className="py-2.5">
+                        <span
+                          className="flex h-5 w-5 items-center justify-center rounded"
+                          style={{ backgroundColor: `${meta.color}22`, color: meta.color }}
+                        >
+                          <Icon className="h-3 w-3" />
+                        </span>
+                        {meta.label}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </div>
+              ))}
             </DropdownMenuContent>
           </DropdownMenuRoot>
         }

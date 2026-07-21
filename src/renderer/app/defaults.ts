@@ -32,6 +32,16 @@ export const RULE_TYPE_ORDER: RenameRule['type'][] = [
   'extension_handling',
 ];
 
+export const RULE_TYPE_CATEGORIES: Array<{
+  id: 'naming' | 'text' | 'sequencing' | 'files';
+  types: RenameRule['type'][];
+}> = [
+  { id: 'naming', types: ['new_name', 'custom_rule'] },
+  { id: 'text', types: ['find_replace', 'prefix_suffix', 'case_transform', 'trim_text', 'remove_text'] },
+  { id: 'sequencing', types: ['sequence_insert', 'letter_sequence_insert', 'date_time'] },
+  { id: 'files', types: ['extension_handling'] },
+];
+
 export const CUSTOM_RULE_HELPERS = [
   'lower(text)',
   'upper(text)',
