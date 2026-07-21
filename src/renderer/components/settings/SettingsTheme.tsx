@@ -1,6 +1,6 @@
 import { ChevronDown, Copy } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Badge, Button, cn } from '../ui';
+import { Badge, Button, Tooltip, cn } from '../ui';
 import type { AppTheme } from '../../themes';
 import { useI18n } from '../../i18n';
 
@@ -101,11 +101,21 @@ export function ThemeOptionCard({
     theme.tokens.destructive,
   ];
 
+  const swatchLabels = [
+    t('appearance.swatch.background'),
+    t('appearance.swatch.card'),
+    t('appearance.swatch.surface'),
+    t('appearance.swatch.accent'),
+    t('appearance.swatch.destructive'),
+  ];
+
   return (
     <div
       className={cn(
-        'rounded-xl border p-3 transition-colors',
-        active ? 'border-accent bg-accent/8' : 'border-border bg-card',
+        'rounded-xl border p-3 transition-all',
+        active
+          ? 'border-accent bg-accent/8 shadow-md shadow-accent/10 ring-2 ring-accent/40'
+          : 'border-border bg-card hover:border-accent/30',
       )}
     >
       <button
@@ -129,11 +139,13 @@ export function ThemeOptionCard({
           />
         </div>
 
-        <div className="mt-3 flex gap-1.5">
+        <div className="mt-3 flex gap-2">
           {swatches.map((color, index) => (
             <span
               key={`${theme.id}-swatch-${index}`}
-              className="h-7 flex-1 rounded-md border border-border/70"
+              aria-label={swatchLabels[index]}
+              title={swatchLabels[index]}
+              className="h-8 flex-1 rounded-md border border-border/70"
               style={{ backgroundColor: color }}
             />
           ))}
@@ -144,10 +156,12 @@ export function ThemeOptionCard({
         <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
           {t(`appearance.base.${theme.baseThemeId}`)}
         </span>
-        <Button size="sm" variant="ghost" onClick={onDuplicate}>
-          <Copy className="h-3.5 w-3.5" />
-          {t('appearance.copy')}
-        </Button>
+        <Tooltip content={t('appearance.copy_help')}>
+          <Button size="sm" variant="ghost" onClick={onDuplicate}>
+            <Copy className="h-3.5 w-3.5" />
+            {t('appearance.copy')}
+          </Button>
+        </Tooltip>
       </div>
     </div>
   );
