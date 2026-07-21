@@ -210,6 +210,8 @@ export function RuleCard({
       }}
       className={cn(
         'rounded-xl border bg-surface transition-all duration-150',
+        'hover:border-accent/40 hover:shadow-md hover:shadow-black/10',
+        'focus-within:ring-2 focus-within:ring-accent/20',
         !rule.enabled && 'opacity-50',
         dragging && 'scale-[0.99] opacity-70',
         dropTarget && !dragging && 'border-accent shadow-[0_0_0_1px_rgba(59,130,246,0.35)]',
@@ -234,7 +236,7 @@ export function RuleCard({
                 event.dataTransfer.effectAllowed = 'move';
                 onDragStart();
               }}
-              className="inline-flex h-7 w-7 cursor-grab items-center justify-center rounded-md text-muted-foreground hover:bg-surface-elevated hover:text-foreground active:cursor-grabbing"
+              className="inline-flex h-7 w-7 cursor-grab items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-elevated hover:text-accent active:cursor-grabbing"
               aria-label={t('rules.drag')}
             >
               <GripVertical className="h-3.5 w-3.5" />
