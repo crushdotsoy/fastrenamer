@@ -63,7 +63,7 @@ export function PreviewPanel({
       ) : (
         <div className="min-h-0 flex-1 overflow-auto">
           <table className="min-w-[700px] border-collapse text-left text-sm xl:min-w-full">
-            <thead className="sticky top-0 z-10 border-b border-border bg-card">
+            <thead className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
               <tr>
                 {[t('preview.column.status'), t('preview.column.original'), t('preview.column.proposed'), t('preview.column.notes')].map((col) => (
                   <th
@@ -79,26 +79,47 @@ export function PreviewPanel({
               {rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="border-b border-border/40 transition-colors hover:bg-surface/60"
+                  className={cn(
+                    'border-b border-border/40 transition-colors',
+                    'border-l-[3px]',
+                    row.status === 'ok' && 'border-l-ok/70 hover:bg-ok/5',
+                    row.status === 'conflict' && 'border-l-conflict/80 bg-conflict/[0.04] hover:bg-conflict/[0.08]',
+                    row.status === 'invalid' && 'border-l-invalid/80 bg-invalid/[0.04] hover:bg-invalid/[0.08]',
+                    row.status === 'unchanged' && 'border-l-transparent hover:bg-surface/60',
+                  )}
                 >
-                  <td className="px-4 py-2.5 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <Badge dot tone={row.status}>{row.status}</Badge>
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
+                  <td
+                    className={cn(
+                      'px-4 py-3 font-mono text-xs',
+                      row.changed
+                        ? 'text-muted-foreground/70 line-through decoration-muted-foreground/40'
+                        : 'text-muted-foreground',
+                    )}
+                  >
                     {row.originalName}
                   </td>
                   <td
                     className={cn(
-                      'px-4 py-2.5 font-mono text-xs font-medium',
+                      'px-4 py-3 font-mono text-xs font-semibold tracking-tight',
                       row.status === 'ok' && 'text-ok',
                       row.status === 'conflict' && 'text-conflict',
                       row.status === 'invalid' && 'text-invalid',
-                      row.status === 'unchanged' && 'text-muted-foreground',
+                      row.status === 'unchanged' && 'font-medium text-muted-foreground',
                     )}
                   >
-                    {row.proposedName}
+                    <span className="inline-flex items-center gap-2">
+                      {row.changed && (
+                        <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-muted-foreground/60" aria-hidden>
+                          →
+                        </span>
+                      )}
+                      {row.proposedName}
+                    </span>
                   </td>
-                  <td className="max-w-xs px-4 py-2.5 text-xs text-muted-foreground truncate">
+                  <td className="max-w-xs px-4 py-3 text-xs text-muted-foreground truncate">
                     {row.reasons.length > 0
                       ? row.reasons.join(' ')
                       : row.changed
