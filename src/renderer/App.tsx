@@ -166,6 +166,7 @@ export function App() {
   });
   const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 1024);
   const isResizing = useRef(false);
+  const [resizingPanels, setResizingPanels] = useState(false);
   const desktopLayoutRef = useRef<HTMLDivElement | null>(null);
   const resizeStartX = useRef(0);
   const resizeStartWidthRatio = useRef(0);
@@ -233,7 +234,10 @@ export function App() {
       const deltaRatio = (e.clientX - resizeStartX.current) / containerWidth;
       setLeftWidthRatio(clampLeftWidthRatio(resizeStartWidthRatio.current + deltaRatio, containerWidth));
     }
-    function onMouseUp() { isResizing.current = false; }
+    function onMouseUp() {
+      isResizing.current = false;
+      setResizingPanels(false);
+    }
     function onWindowResize() {
       const containerWidth = desktopLayoutRef.current?.getBoundingClientRect().width ?? window.innerWidth;
       setLeftWidthRatio((current) => clampLeftWidthRatio(current, containerWidth));
@@ -789,18 +793,65 @@ export function App() {
 
           {isDesktop && (
             <div
-              className="flex h-full w-3 shrink-0 cursor-col-resize select-none items-center justify-center group"
+              role="separator"
+              aria-orientation="vertical"
+              aria-label={t('layout.resize_panels')}
+              aria-valuemin={20}
+              aria-valuemax={70}
+              aria-valuenow={Math.round(leftWidthRatio * 100)}
+              title={t('layout.resize_panels_hint')}
+              tabIndex={0}
+              className={cn(
+                'group relative flex h-full w-4 shrink-0 cursor-col-resize select-none items-center justify-center outline-none',
+                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              )}
               onMouseDown={(e) => {
                 const containerWidth =
                   desktopLayoutRef.current?.getBoundingClientRect().width ?? window.innerWidth;
                 isResizing.current = true;
+                setResizingPanels(true);
                 resizeStartX.current = e.clientX;
                 resizeStartWidthRatio.current = leftWidthRatio;
                 resizeContainerWidth.current = containerWidth;
                 e.preventDefault();
               }}
+              onKeyDown={(e) => {
+                const containerWidth =
+                  desktopLayoutRef.current?.getBoundingClientRect().width ?? window.innerWidth;
+                const step = e.shiftKey ? 0.05 : 0.02;
+                if (e.key === 'ArrowLeft') {
+                  e.preventDefault();
+                  setLeftWidthRatio((current) => clampLeftWidthRatio(current - step, containerWidth));
+                } else if (e.key === 'ArrowRight') {
+                  e.preventDefault();
+                  setLeftWidthRatio((current) => clampLeftWidthRatio(current + step, containerWidth));
+                } else if (e.key === 'Home') {
+                  e.preventDefault();
+                  setLeftWidthRatio((current) => clampLeftWidthRatio(0.2, containerWidth));
+                } else if (e.key === 'End') {
+                  e.preventDefault();
+                  setLeftWidthRatio((current) => clampLeftWidthRatio(0.7, containerWidth));
+                }
+              }}
             >
-              <div className="h-full w-px bg-border transition-colors duration-150 group-hover:bg-accent" />
+              <div
+                className={cn(
+                  'absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border transition-colors duration-150',
+                  'group-hover:bg-accent group-focus-visible:bg-accent',
+                  resizingPanels && 'bg-accent',
+                )}
+              />
+              <div
+                className={cn(
+                  'relative z-10 flex h-8 w-3.5 flex-col items-center justify-center gap-0.5 rounded-full border border-border bg-card shadow-sm',
+                  'opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100',
+                  resizingPanels && 'opacity-100 border-accent/50',
+                )}
+              >
+                <span className="h-0.5 w-0.5 rounded-full bg-muted-foreground" />
+                <span className="h-0.5 w-0.5 rounded-full bg-muted-foreground" />
+                <span className="h-0.5 w-0.5 rounded-full bg-muted-foreground" />
+              </div>
             </div>
           )}
 

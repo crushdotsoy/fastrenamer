@@ -103,6 +103,9 @@ export const ptPT = {
   'preview.ready': 'Pronto para renomear',
   'preview.no_change': 'Sem alteracao',
 
+  'layout.resize_panels': 'Redimensionar paineis',
+  'layout.resize_panels_hint': 'Arraste ou use as setas para redimensionar os paineis de regras e previsualizacao',
+
   'rules.title': 'Pilha de Regras',
   'rules.detail': 'Transformacoes aplicadas de cima para baixo.',
   'rules.add': 'Adicionar Regra',

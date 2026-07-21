@@ -104,6 +104,9 @@ export const en = {
   'preview.ready': 'Ready to rename',
   'preview.no_change': 'No change',
 
+  'layout.resize_panels': 'Resize panels',
+  'layout.resize_panels_hint': 'Drag or use arrow keys to resize the rule and preview panels',
+
   'rules.title': 'Rule Stack',
   'rules.detail': 'Transforms applied top to bottom.',
   'rules.add': 'Add Rule',
