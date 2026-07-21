@@ -1,5 +1,7 @@
 import {
+  AlertTriangle,
   CheckCircle2,
+  CircleDot,
   Clock3,
   Copy,
   FileCode,
@@ -13,6 +15,7 @@ import {
   Trash2,
   Undo2,
   X,
+  XCircle,
 } from 'lucide-react';
 import type { PlatformTarget, PreviewResult, SortMode } from '@fast-renamer/rename-engine';
 import type { WindowState } from '@shared/contracts';
@@ -273,12 +276,20 @@ export function TopBar({
         </div>
       </div>
 
-      <div className="app-no-drag flex flex-wrap items-center gap-2 border-t border-border bg-surface/40 px-4 py-2 sm:px-5">
-        <Badge dot tone="ok">{t('topbar.status.ok', { count: preview.summary.ok })}</Badge>
-        <Badge dot tone="conflict">{t('topbar.status.conflicts', { count: preview.summary.conflict })}</Badge>
-        <Badge dot tone="invalid">{t('topbar.status.invalid', { count: preview.summary.invalid })}</Badge>
-        <Badge dot tone="unchanged">{t('topbar.status.unchanged', { count: preview.summary.unchanged })}</Badge>
-        <Badge dot>{selectedLabel}</Badge>
+      <div className="app-no-drag flex flex-wrap items-center gap-2.5 border-t border-border bg-surface/40 px-4 py-2 sm:px-5">
+        <Badge icon={CheckCircle2} tone="ok" className="tabular-nums">
+          {t('topbar.status.ok', { count: preview.summary.ok })}
+        </Badge>
+        <Badge icon={XCircle} tone="conflict" className="tabular-nums">
+          {t('topbar.status.conflicts', { count: preview.summary.conflict })}
+        </Badge>
+        <Badge icon={AlertTriangle} tone="invalid" className="tabular-nums">
+          {t('topbar.status.invalid', { count: preview.summary.invalid })}
+        </Badge>
+        <Badge icon={CircleDot} tone="unchanged" className="tabular-nums">
+          {t('topbar.status.unchanged', { count: preview.summary.unchanged })}
+        </Badge>
+        <Badge dot className="tabular-nums">{selectedLabel}</Badge>
 
         {busy !== 'idle' && (
           <span className="flex items-center gap-1.5 text-xs text-accent">

@@ -5,6 +5,7 @@ import * as SelectPrimitive from '@radix-ui/react-select';
 import * as SwitchPrimitive from '@radix-ui/react-switch';
 import * as ToastPrimitive from '@radix-ui/react-toast';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
+import type { LucideIcon } from 'lucide-react';
 import { Check, ChevronDown, ChevronUp, X } from 'lucide-react';
 import type {
   ButtonHTMLAttributes,
@@ -314,13 +315,14 @@ export function Badge({
   className,
   tone = 'default',
   dot,
+  icon: Icon,
   ...props
-}: HTMLAttributes<HTMLSpanElement> & { tone?: BadgeTone; dot?: boolean }) {
+}: HTMLAttributes<HTMLSpanElement> & { tone?: BadgeTone; dot?: boolean; icon?: LucideIcon }) {
   return (
     <span
       {...props}
       className={cn(
-        'inline-flex h-5 items-center gap-1.5 rounded-full border px-2 text-[10px] font-semibold uppercase tracking-wide',
+        'inline-flex h-5 items-center gap-1.5 rounded-full border px-2.5 text-[10px] font-semibold uppercase tracking-wide',
         tone === 'default' && 'border-border bg-surface text-muted-foreground',
         tone === 'ok' && 'border-ok/20 bg-ok/10 text-ok',
         tone === 'conflict' && 'border-conflict/20 bg-conflict/10 text-conflict',
@@ -330,18 +332,22 @@ export function Badge({
         className,
       )}
     >
-      {dot && (
-        <span
-          className={cn(
-            'h-1.5 w-1.5 rounded-full',
-            tone === 'default' && 'bg-muted-foreground',
-            tone === 'ok' && 'bg-ok',
-            tone === 'conflict' && 'bg-conflict',
-            tone === 'invalid' && 'bg-invalid',
-            tone === 'unchanged' && 'bg-unchanged',
-            tone === 'accent' && 'bg-accent',
-          )}
-        />
+      {Icon ? (
+        <Icon className="h-3 w-3 shrink-0" />
+      ) : (
+        dot && (
+          <span
+            className={cn(
+              'h-1.5 w-1.5 rounded-full',
+              tone === 'default' && 'bg-muted-foreground',
+              tone === 'ok' && 'bg-ok',
+              tone === 'conflict' && 'bg-conflict',
+              tone === 'invalid' && 'bg-invalid',
+              tone === 'unchanged' && 'bg-unchanged',
+              tone === 'accent' && 'bg-accent',
+            )}
+          />
+        )
       )}
       {props.children}
     </span>
