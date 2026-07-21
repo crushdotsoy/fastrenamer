@@ -3,6 +3,13 @@ import type { PreviewResult } from '@fast-renamer/rename-engine/types';
 import { STATUS_OPTIONS, type StatusFilter } from '../../app/defaults';
 import { useI18n } from '../../i18n';
 
+const STATUS_LABEL_KEYS: Record<StatusFilter, string> = {
+  ok: 'preview.status.ok',
+  conflict: 'preview.status.conflict',
+  invalid: 'preview.status.invalid',
+  unchanged: 'preview.status.unchanged',
+};
+
 export function PreviewPanel({
   preview,
   rows,
@@ -28,9 +35,10 @@ export function PreviewPanel({
         title={t('preview.title')}
         detail={t('preview.detail')}
         actions={
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('preview.column.status')}>
             {STATUS_OPTIONS.filter((status) => statusCounts[status] > 0).map((status) => {
               const active = statusFilters.includes(status);
+              const label = t(STATUS_LABEL_KEYS[status]);
               const toneMap: Record<string, string> = {
                 ok: 'text-ok border-ok/30 bg-ok/10',
                 conflict: 'text-conflict border-conflict/30 bg-conflict/10',
@@ -40,7 +48,14 @@ export function PreviewPanel({
               return (
                 <button
                   key={status}
+                  type="button"
                   onClick={() => onToggleFilter(status)}
+                  aria-pressed={active}
+                  aria-label={t('preview.filter.aria', {
+                    status: label,
+                    count: statusCounts[status],
+                    active,
+                  })}
                   className={cn(
                     'rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-all duration-150',
                     active
@@ -48,7 +63,10 @@ export function PreviewPanel({
                       : 'border-border bg-surface text-muted-foreground hover:border-border/80',
                   )}
                 >
-                  {status} {statusCounts[status]}
+                  {t('preview.filter.toggle', {
+                    status: label,
+                    count: statusCounts[status],
+                  })}
                 </button>
               );
             })}
@@ -82,7 +100,7 @@ export function PreviewPanel({
                   className="border-b border-border/40 transition-colors hover:bg-surface/60"
                 >
                   <td className="px-4 py-2.5 whitespace-nowrap">
-                    <Badge dot tone={row.status}>{row.status}</Badge>
+                    <Badge dot tone={row.status}>{t(STATUS_LABEL_KEYS[row.status])}</Badge>
                   </td>
                   <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
                     {row.originalName}

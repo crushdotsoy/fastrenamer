@@ -102,6 +102,20 @@ export const ptPT = {
   'preview.column.notes': 'Notas',
   'preview.ready': 'Pronto para renomear',
   'preview.no_change': 'Sem alteracao',
+  'preview.status.ok': 'OK',
+  'preview.status.conflict': 'Conflito',
+  'preview.status.invalid': 'Invalido',
+  'preview.status.unchanged': 'Sem alteracao',
+  'preview.filter.toggle': (vars?: Record<string, unknown>) =>
+    `${value(vars, 'status') ?? ''} · ${value(vars, 'count') ?? 0}`,
+  'preview.filter.aria': (vars?: Record<string, unknown>) => {
+    const status = String(value(vars, 'status') ?? '');
+    const count = value(vars, 'count') ?? 0;
+    const active = Boolean(value(vars, 'active'));
+    return active
+      ? `Ocultar linhas ${status} (${count})`
+      : `Mostrar linhas ${status} (${count})`;
+  },
 
   'rules.title': 'Pilha de Regras',
   'rules.detail': 'Transformacoes aplicadas de cima para baixo.',

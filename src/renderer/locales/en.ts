@@ -103,6 +103,20 @@ export const en = {
   'preview.column.notes': 'Notes',
   'preview.ready': 'Ready to rename',
   'preview.no_change': 'No change',
+  'preview.status.ok': 'OK',
+  'preview.status.conflict': 'Conflict',
+  'preview.status.invalid': 'Invalid',
+  'preview.status.unchanged': 'Unchanged',
+  'preview.filter.toggle': (vars?: Record<string, unknown>) =>
+    `${value(vars, 'status') ?? ''} · ${value(vars, 'count') ?? 0}`,
+  'preview.filter.aria': (vars?: Record<string, unknown>) => {
+    const status = String(value(vars, 'status') ?? '');
+    const count = value(vars, 'count') ?? 0;
+    const active = Boolean(value(vars, 'active'));
+    return active
+      ? `Hide ${status} rows (${count})`
+      : `Show ${status} rows (${count})`;
+  },
 
   'rules.title': 'Rule Stack',
   'rules.detail': 'Transforms applied top to bottom.',
