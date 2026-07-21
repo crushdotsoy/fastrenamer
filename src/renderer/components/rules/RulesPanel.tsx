@@ -263,14 +263,15 @@ export function RuleCard({
           <Switch
             checked={rule.enabled}
             onCheckedChange={(checked) => onUpdate((r) => ({ ...r, enabled: checked }))}
+            aria-label={rule.enabled ? t('rules.disable') : t('rules.enable')}
           />
           <Tooltip content={t('rules.move_up')}>
-            <IconButton className="h-7 w-7" onClick={() => onMove('up')}>
+            <IconButton className="h-7 w-7" onClick={() => onMove('up')} aria-label={t('rules.move_up')}>
               <ChevronUp className="h-3.5 w-3.5" />
             </IconButton>
           </Tooltip>
           <Tooltip content={t('rules.move_down')}>
-            <IconButton className="h-7 w-7" onClick={() => onMove('down')}>
+            <IconButton className="h-7 w-7" onClick={() => onMove('down')} aria-label={t('rules.move_down')}>
               <ChevronDown className="h-3.5 w-3.5" />
             </IconButton>
           </Tooltip>
@@ -278,6 +279,7 @@ export function RuleCard({
             <IconButton
               className="h-7 w-7 text-destructive hover:bg-destructive/10"
               onClick={onDelete}
+              aria-label={t('rules.delete')}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </IconButton>

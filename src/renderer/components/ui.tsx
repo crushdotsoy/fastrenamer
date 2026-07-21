@@ -17,6 +17,7 @@ import type {
 import { forwardRef } from 'react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useI18n } from '../i18n';
 
 export function cn(...inputs: Array<string | false | null | undefined>) {
   return twMerge(clsx(inputs));
@@ -277,16 +278,19 @@ export function Switch({
   checked,
   onCheckedChange,
   label,
+  'aria-label': ariaLabel,
 }: {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   label?: string;
+  'aria-label'?: string;
 }) {
   return (
     <label className="inline-flex cursor-pointer select-none items-center gap-2">
       <SwitchPrimitive.Root
         checked={checked}
         onCheckedChange={onCheckedChange}
+        aria-label={ariaLabel ?? label}
         className={cn(
           'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent',
           'transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -501,6 +505,8 @@ export function Modal({
   description?: string;
   children: ReactNode;
 }) {
+  const { t } = useI18n();
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -518,7 +524,7 @@ export function Modal({
               )}
             </div>
             <Dialog.Close asChild>
-              <IconButton>
+              <IconButton aria-label={t('common.close')}>
                 <X className="h-4 w-4" />
               </IconButton>
             </Dialog.Close>
@@ -543,6 +549,8 @@ export function Drawer({
   description?: string;
   children: ReactNode;
 }) {
+  const { t } = useI18n();
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -560,7 +568,7 @@ export function Drawer({
               )}
             </div>
             <Dialog.Close asChild>
-              <IconButton>
+              <IconButton aria-label={t('common.close')}>
                 <X className="h-4 w-4" />
               </IconButton>
             </Dialog.Close>

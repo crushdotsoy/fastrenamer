@@ -115,6 +115,8 @@ export const ptPT = {
   'rules.expand': 'Expandir regra',
   'rules.collapse': 'Colapsar regra',
   'rules.delete': 'Apagar regra',
+  'rules.enable': 'Ativar regra',
+  'rules.disable': 'Desativar regra',
 
   'editor.new_name.placeholder': 'name_{seq_num:0001}',
   'editor.new_name.help': 'Clique num token para o inserir onde o cursor esta. As extensoes mantem-se, a menos que adicione uma regra de Extensao.',
@@ -181,6 +183,7 @@ export const ptPT = {
   'sources.file': 'ficheiro',
   'sources.remove': (vars?: Record<string, unknown>) => `Remover ${value(vars, 'name') ?? ''}`,
   'common.cancel': 'Cancelar',
+  'common.close': 'Fechar',
 
   'presets.title': 'Predefinicoes',
   'presets.description': 'Pilhas de exemplo para descoberta e predefinicoes reutilizaveis do utilizador.',

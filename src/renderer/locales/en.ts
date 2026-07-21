@@ -116,6 +116,8 @@ export const en = {
   'rules.expand': 'Expand rule',
   'rules.collapse': 'Collapse rule',
   'rules.delete': 'Delete rule',
+  'rules.enable': 'Enable rule',
+  'rules.disable': 'Disable rule',
 
   'editor.new_name.placeholder': 'name_{seq_num:0001}',
   'editor.new_name.help': 'Click a token to insert it where your cursor is. Extensions stay unchanged unless you add an Extension rule.',
@@ -191,6 +193,7 @@ export const en = {
   'sources.file': 'file',
   'sources.remove': (vars?: Record<string, unknown>) => `Remove ${value(vars, 'name') ?? ''}`,
   'common.cancel': 'Cancel',
+  'common.close': 'Close',
 
   'presets.title': 'Presets',
   'presets.description': 'Sample stacks for discoverability plus reusable user presets.',
