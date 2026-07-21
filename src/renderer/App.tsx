@@ -809,6 +809,7 @@ export function App() {
               preview={preview}
               rows={filteredRows}
               statusFilters={statusFilters}
+              onAddSources={() => setAddSourcesOpen(true)}
               onToggleFilter={(status) =>
                 setStatusFilters((cur) =>
                   cur.includes(status) ? cur.filter((s) => s !== status) : [...cur, status],

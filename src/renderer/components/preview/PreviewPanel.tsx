@@ -1,4 +1,5 @@
-import { Badge, EmptyState, Panel, PanelHeader, cn } from '../ui';
+import { FileInput } from 'lucide-react';
+import { Badge, Button, Panel, PanelHeader, cn } from '../ui';
 import type { PreviewResult } from '@fast-renamer/rename-engine/types';
 import { STATUS_OPTIONS, type StatusFilter } from '../../app/defaults';
 import { useI18n } from '../../i18n';
@@ -8,11 +9,13 @@ export function PreviewPanel({
   rows,
   statusFilters,
   onToggleFilter,
+  onAddSources,
 }: {
   preview: PreviewResult;
   rows: PreviewResult['rows'];
   statusFilters: StatusFilter[];
   onToggleFilter: (s: StatusFilter) => void;
+  onAddSources: () => void;
 }) {
   const { t } = useI18n();
   const statusCounts: Record<StatusFilter, number> = {
@@ -57,8 +60,18 @@ export function PreviewPanel({
       />
 
       {preview.rows.length === 0 ? (
-        <div className="p-4">
-          <EmptyState message={t('preview.empty')} />
+        <div className="flex min-h-0 flex-1 items-center justify-center p-4">
+          <div className="flex w-full max-w-md flex-col items-center rounded-xl border border-dashed border-border bg-surface/40 px-6 py-10 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/12 text-accent">
+              <FileInput className="h-5 w-5" />
+            </div>
+            <h3 className="mt-4 text-sm font-semibold text-foreground">{t('preview.ready')}</h3>
+            <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">{t('preview.empty')}</p>
+            <Button className="mt-5" onClick={onAddSources}>
+              <FileInput className="h-4 w-4" />
+              {t('topbar.add')}
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-auto">
