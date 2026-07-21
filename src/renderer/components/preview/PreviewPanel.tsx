@@ -1,5 +1,6 @@
 import { Badge, EmptyState, Panel, PanelHeader, cn } from '../ui';
 import type { PreviewResult } from '@fast-renamer/rename-engine/types';
+import { Table2 } from 'lucide-react';
 import { STATUS_OPTIONS, type StatusFilter } from '../../app/defaults';
 import { useI18n } from '../../i18n';
 
@@ -57,8 +58,13 @@ export function PreviewPanel({
       />
 
       {preview.rows.length === 0 ? (
-        <div className="p-4">
-          <EmptyState message={t('preview.empty')} />
+        <div className="flex min-h-0 flex-1 items-center justify-center p-6">
+          <EmptyState
+            className="w-full max-w-md border-0 bg-transparent p-0"
+            icon={<Table2 className="h-5 w-5" />}
+            title={t('preview.empty.title')}
+            description={t('preview.empty.description')}
+          />
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-auto">

@@ -391,15 +391,48 @@ export function PanelHeader({
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
-export function EmptyState({ message, className }: { message: string; className?: string }) {
+export function EmptyState({
+  message,
+  title,
+  description,
+  icon,
+  action,
+  className,
+}: {
+  message?: string;
+  title?: string;
+  description?: string;
+  icon?: ReactNode;
+  action?: ReactNode;
+  className?: string;
+}) {
+  const body = title || description || icon || action;
+
   return (
     <div
       className={cn(
-        'flex items-center justify-center rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground',
+        'flex flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 py-10 text-center',
         className,
       )}
     >
-      {message}
+      {body ? (
+        <>
+          {icon && (
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface text-muted-foreground">
+              {icon}
+            </div>
+          )}
+          {title && <p className="text-sm font-semibold text-foreground">{title}</p>}
+          {(description || message) && (
+            <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-muted-foreground">
+              {description ?? message}
+            </p>
+          )}
+          {action && <div className="mt-4">{action}</div>}
+        </>
+      ) : (
+        <p className="text-sm text-muted-foreground">{message}</p>
+      )}
     </div>
   );
 }

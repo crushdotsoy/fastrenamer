@@ -9,6 +9,7 @@ import {
   FileCode,
   GripVertical,
   Hash,
+  Layers,
   Plus,
   Replace,
   Scissors,
@@ -125,7 +126,12 @@ export function RulesPanel({
 
       <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto p-4">
         {rules.length === 0 && (
-          <EmptyState message={t('rules.empty')} />
+          <EmptyState
+            className="border-0 bg-transparent py-14"
+            icon={<Layers className="h-5 w-5" />}
+            title={t('rules.empty.title')}
+            description={t('rules.empty.description')}
+          />
         )}
         {rules.map((rule, index) => (
           <RuleCard
