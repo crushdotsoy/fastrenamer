@@ -274,11 +274,25 @@ export function TopBar({
       </div>
 
       <div className="app-no-drag flex flex-wrap items-center gap-2 border-t border-border bg-surface/40 px-4 py-2 sm:px-5">
-        <Badge dot tone="ok">{t('topbar.status.ok', { count: preview.summary.ok })}</Badge>
-        <Badge dot tone="conflict">{t('topbar.status.conflicts', { count: preview.summary.conflict })}</Badge>
-        <Badge dot tone="invalid">{t('topbar.status.invalid', { count: preview.summary.invalid })}</Badge>
-        <Badge dot tone="unchanged">{t('topbar.status.unchanged', { count: preview.summary.unchanged })}</Badge>
-        <Badge dot>{selectedLabel}</Badge>
+        {sourceCount === 0 ? (
+          <span className="text-xs text-muted-foreground">{t('topbar.status.empty')}</span>
+        ) : (
+          <>
+            {preview.summary.ok > 0 && (
+              <Badge dot tone="ok">{t('topbar.status.ok', { count: preview.summary.ok })}</Badge>
+            )}
+            {preview.summary.conflict > 0 && (
+              <Badge dot tone="conflict">{t('topbar.status.conflicts', { count: preview.summary.conflict })}</Badge>
+            )}
+            {preview.summary.invalid > 0 && (
+              <Badge dot tone="invalid">{t('topbar.status.invalid', { count: preview.summary.invalid })}</Badge>
+            )}
+            {preview.summary.unchanged > 0 && (
+              <Badge dot tone="unchanged">{t('topbar.status.unchanged', { count: preview.summary.unchanged })}</Badge>
+            )}
+            <Badge dot>{selectedLabel}</Badge>
+          </>
+        )}
 
         {busy !== 'idle' && (
           <span className="flex items-center gap-1.5 text-xs text-accent">

@@ -86,6 +86,7 @@ export const en = {
   'topbar.maximize_window': 'Maximize window',
   'topbar.close': 'Close',
   'topbar.close_window': 'Close window',
+  'topbar.status.empty': 'No files loaded',
   'topbar.status.ok': (vars?: Record<string, unknown>) => `${value(vars, 'count')} ok`,
   'topbar.status.conflicts': (vars?: Record<string, unknown>) => `${value(vars, 'count')} conflicts`,
   'topbar.status.invalid': (vars?: Record<string, unknown>) => `${value(vars, 'count')} invalid`,

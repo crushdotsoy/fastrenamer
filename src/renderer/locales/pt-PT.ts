@@ -85,6 +85,7 @@ export const ptPT = {
   'topbar.maximize_window': 'Maximizar janela',
   'topbar.close': 'Fechar',
   'topbar.close_window': 'Fechar janela',
+  'topbar.status.empty': 'Nenhum ficheiro carregado',
   'topbar.status.ok': (vars?: Record<string, unknown>) => `${value(vars, 'count')} ok`,
   'topbar.status.conflicts': (vars?: Record<string, unknown>) => `${value(vars, 'count')} conflitos`,
   'topbar.status.invalid': (vars?: Record<string, unknown>) => `${value(vars, 'count')} invalidos`,
