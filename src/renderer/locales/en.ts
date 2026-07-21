@@ -229,6 +229,7 @@ export const en = {
   'undo.occupied': 'occupied',
 
   'settings.title': 'Settings',
+  'settings.click_to_expand': 'Click to expand',
   'settings.description': 'Local preferences plus GitHub release updates.',
   'settings.updates': 'App Updates',
   'settings.language': 'Language',
