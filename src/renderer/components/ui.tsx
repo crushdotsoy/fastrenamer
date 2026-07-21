@@ -507,18 +507,18 @@ export function Modal({
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card shadow-2xl outline-none">
           <div className="flex items-start justify-between border-b border-border px-5 py-4">
-            <div>
-              <Dialog.Title className="text-base font-semibold text-foreground">
+            <div className="min-w-0 pr-4">
+              <Dialog.Title className="text-lg font-semibold text-foreground">
                 {title}
               </Dialog.Title>
               {description && (
-                <Dialog.Description className="mt-0.5 text-xs text-muted-foreground">
+                <Dialog.Description className="mt-1 text-xs text-muted-foreground/80">
                   {description}
                 </Dialog.Description>
               )}
             </div>
             <Dialog.Close asChild>
-              <IconButton>
+              <IconButton className="h-10 w-10 shrink-0 rounded-lg hover:bg-surface-elevated hover:text-foreground">
                 <X className="h-4 w-4" />
               </IconButton>
             </Dialog.Close>
@@ -549,18 +549,18 @@ export function Drawer({
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" />
         <Dialog.Content className="fixed inset-y-0 right-0 z-50 w-full max-w-lg border-l border-border bg-card shadow-2xl outline-none">
           <div className="flex items-start justify-between border-b border-border px-5 py-4">
-            <div>
-              <Dialog.Title className="text-base font-semibold text-foreground">
+            <div className="min-w-0 pr-4">
+              <Dialog.Title className="text-lg font-semibold text-foreground">
                 {title}
               </Dialog.Title>
               {description && (
-                <Dialog.Description className="mt-0.5 text-xs text-muted-foreground">
+                <Dialog.Description className="mt-1 text-xs text-muted-foreground/80">
                   {description}
                 </Dialog.Description>
               )}
             </div>
             <Dialog.Close asChild>
-              <IconButton>
+              <IconButton className="h-10 w-10 shrink-0 rounded-lg hover:bg-surface-elevated hover:text-foreground">
                 <X className="h-4 w-4" />
               </IconButton>
             </Dialog.Close>
