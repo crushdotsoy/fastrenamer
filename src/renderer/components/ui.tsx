@@ -6,6 +6,7 @@ import * as SwitchPrimitive from '@radix-ui/react-switch';
 import * as ToastPrimitive from '@radix-ui/react-toast';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { Check, ChevronDown, ChevronUp, X } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type {
   ButtonHTMLAttributes,
   ComponentPropsWithoutRef,
@@ -391,15 +392,34 @@ export function PanelHeader({
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
-export function EmptyState({ message, className }: { message: string; className?: string }) {
+export function EmptyState({
+  icon: Icon,
+  title,
+  message,
+  action,
+  className,
+}: {
+  icon?: LucideIcon;
+  title?: string;
+  message: string;
+  action?: ReactNode;
+  className?: string;
+}) {
   return (
     <div
       className={cn(
-        'flex items-center justify-center rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground',
+        'flex flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-surface/40 px-6 py-8 text-center',
         className,
       )}
     >
-      {message}
+      {Icon && (
+        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-surface-elevated text-muted-foreground">
+          <Icon className="h-5 w-5" />
+        </div>
+      )}
+      {title && <p className="text-sm font-semibold text-foreground">{title}</p>}
+      <p className={cn('max-w-xs text-sm text-muted-foreground', title && 'mt-1')}>{message}</p>
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }

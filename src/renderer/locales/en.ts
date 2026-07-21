@@ -96,6 +96,7 @@ export const en = {
 
   'preview.title': 'Preview',
   'preview.detail': 'Live diff with filesystem safety checks.',
+  'preview.empty_title': 'No preview yet',
   'preview.empty': 'Preview appears here after you select sources and configure rules.',
   'preview.column.status': 'Status',
   'preview.column.original': 'Original',
@@ -108,7 +109,8 @@ export const en = {
   'rules.detail': 'Transforms applied top to bottom.',
   'rules.add': 'Add Rule',
   'rules.type': 'Rule type',
-  'rules.empty': 'No rules yet. Add one with the button above.',
+  'rules.empty_title': 'No rules yet',
+  'rules.empty': 'Add a rule with the button above to start building your rename stack.',
   'rules.drag': 'Drag to reorder rule',
   'rules.step': (vars?: Record<string, unknown>) => `Step ${value(vars, 'count')}`,
   'rules.move_up': 'Move up',
