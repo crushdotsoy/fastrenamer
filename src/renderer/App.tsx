@@ -839,9 +839,9 @@ export function App() {
         title={sourceDialogTitle}
         description={sourceDialogDescription}
       >
-        <div className="space-y-5 p-5">
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            <div className="space-y-2">
+        <div className="space-y-7 p-5">
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2.5">
               <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {t('sources.set')}
               </label>
@@ -876,7 +876,7 @@ export function App() {
               <p className="text-xs text-muted-foreground">{sourceModeMeta[draftSourceMode].detail}</p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {t('sources.filter')}
               </label>
@@ -893,7 +893,7 @@ export function App() {
               </p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5 md:col-span-2">
               <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {t('sources.sort')}
               </label>
@@ -916,11 +916,11 @@ export function App() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-surface p-4">
+          <div className="rounded-xl border border-border bg-surface p-5">
             <p className="text-sm font-semibold text-foreground">
               {pendingDroppedSources ? t('sources.dropped') : t('sources.current')}
             </p>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-3 flex min-h-8 flex-wrap gap-2">
               <Badge dot tone="accent">{sourceModeMeta[draftSourceMode].label}</Badge>
               <Badge dot>{t('sources.sort.badge', { mode: sortModeMeta[draftSortMode].label })}</Badge>
               {draftFileNamePattern ? <Badge dot>{draftFileNamePattern}</Badge> : null}
